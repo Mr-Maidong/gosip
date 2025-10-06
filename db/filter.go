@@ -142,7 +142,7 @@ func (qm QueryMap) SQL() string {
 			ws = append(ws, strings.Replace(k, "?", vtosql(v), 1))
 		}
 	}
-	if qm.Or == nil || len(qm.Or) == 0 {
+	if len(qm.Or) == 0 {
 		return strings.Join(ws, " and ")
 	}
 

@@ -267,7 +267,8 @@ func sipMessageCatalog(u Devices, body []byte) error {
 	if message.SumNum > 0 {
 		for _, d := range message.Item {
 			channel := Channels{ChannelID: d.ChannelID, DeviceID: message.DeviceID}
-			if err := db.Get(db.DBClient, &channel); err == nil {
+			var err error
+			if err = db.Get(db.DBClient, &channel); err == nil {
 				channel.Active = time.Now().Unix()
 				channel.URIStr = fmt.Sprintf("sip:%s@%s", d.ChannelID, _sysinfo.Region)
 				channel.Status = transDeviceStatus(d.Status)
@@ -284,6 +285,31 @@ func sipMessageCatalog(u Devices, body []byte) error {
 				channel.Secrecy = d.Secrecy
 				db.Save(db.DBClient, &channel)
 				go notify(notifyChannelsActive(channel))
+			} else if db.RecordNotFound(err) {
+				// 通道不存在，创建新通道
+				channel = Channels{
+					ChannelID:    d.ChannelID,
+					DeviceID:     message.DeviceID,
+					Active:       time.Now().Unix(),
+					URIStr:       fmt.Sprintf("sip:%s@%s", d.ChannelID, _sysinfo.Region),
+					Status:       transDeviceStatus(d.Status),
+					Name:         d.Name,
+					Manufacturer: d.Manufacturer,
+					Model:        d.Model,
+					Owner:        d.Owner,
+					CivilCode:    d.CivilCode,
+					Address:      d.Address,
+					Parental:     d.Parental,
+					SafetyWay:    d.SafetyWay,
+					RegisterWay:  d.RegisterWay,
+					Secrecy:      d.Secrecy,
+				}
+				if err = db.Create(db.DBClient, &channel); err != nil {
+					logrus.Errorln("创建通道失败:", err, "channelid:", d.ChannelID, "deviceid:", message.DeviceID)
+				} else {
+					logrus.Infoln("创建新通道成功:", d.ChannelID, "deviceid:", message.DeviceID)
+					go notify(notifyChannelsActive(channel))
+				}
 			} else {
 				logrus.Infoln("deviceid not found,deviceid:", d.DeviceID, "pdid:", message.DeviceID, "err", err)
 			}
