@@ -7,6 +7,7 @@ definitions:
           $ref: '#/definitions/sipapi.Channels'
         type: array
       total:
+        format: int64
         type: integer
     type: object
   api.DevicesListResponse:
@@ -16,6 +17,7 @@ definitions:
           $ref: '#/definitions/sipapi.Devices'
         type: array
       total:
+        format: int64
         type: integer
     type: object
   api.StreamsListResponse:
@@ -25,6 +27,7 @@ definitions:
           $ref: '#/definitions/sipapi.Streams'
         type: array
       total:
+        format: int64
         type: integer
     type: object
   m.SysInfo:
@@ -728,6 +731,43 @@ paths:
           schema:
             type: string
       summary: 通道新增接口
+      tags:
+      - channels
+  /devices/{id}/channels_sync:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 主动同步指定设备的通道信息
+      parameters:
+      - description: 设备id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 设备通道同步接口
       tags:
       - channels
   /streams:
