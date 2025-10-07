@@ -3,13 +3,14 @@ database:
   dialect: mysql # mysql postgresql sqllite
   url: mysip:Yangtao#123@tcp(192.168.1.191:13306)/mysip?charset=utf8&parseTime=True&loc=Local # 数据库地址
 udp: 0.0.0.0:55060 # sip服务器udp端口
+tcp: 0.0.0.0:55060 # sip服务器tcp端口
 api: 0.0.0.0:8090 # sip服务 restfulapi 端口
 secret: z9hG4bK1233983766 # restful接口验证key 验证请求使用
 logger: trace
 media:
-  restful: http://192.168.1.191:8090 # media 服务器restfulapi地址 
-  http: http://192.168.1.191:8090  # media 服务器 http请求地址
-  WS: ws://192.168.1.191:8090  # media 服务器 ws请求地址
+  restful: http://192.168.1.191:18080 # media 服务器restfulapi地址 
+  http: http://192.168.1.191:18080  # media 服务器 http请求地址
+  ws: ws://192.168.1.191:18080  # media 服务器 ws请求地址
   rtmp: rtmp://192.168.1.191:1935  # media 服务器 rtmp请求地址
   rtsp: rtsp://192.168.1.191:8554   # media 服务器 rtsp请求地址
   rtp: http://192.168.1.191:10000  # media rtp请求地址 zlm对外开放的接受rtp推流的地址

@@ -70,13 +70,84 @@ type Connection interface {
 	WriteTo(buf []byte, raddr net.Addr) (num int, err error)
 }
 
-// Connection implementation.
-type connection struct {
-	baseConn net.Conn
+func newTCPConnection(baseConn *net.TCPConn) Connection {
+	conn := &tcpConnection{
+		baseConn: baseConn,
+		laddr:    baseConn.LocalAddr(),
+		raddr:    baseConn.RemoteAddr(),
+		logKey:   "tcpConnection",
+	}
+	return conn
+}
+
+// TCP连接包装器
+type tcpConnection struct {
+	baseConn *net.TCPConn
 	laddr    net.Addr
 	raddr    net.Addr
-	// mu       sync.RWMutex
-	logKey string
+	logKey   string
+}
+
+func (conn *tcpConnection) Read(buf []byte) (int, error) {
+	num, err := conn.baseConn.Read(buf)
+	if err != nil {
+		return num, utils.NewError(err, conn.logKey, "read", conn.baseConn.LocalAddr().String())
+	}
+	return num, err
+}
+
+func (conn *tcpConnection) Write(buf []byte) (int, error) {
+	num, err := conn.baseConn.Write(buf)
+	if err != nil {
+		return num, utils.NewError(err, conn.logKey, "write", conn.baseConn.LocalAddr().String())
+	}
+	logrus.Tracef("TCP write %d bytes, %s -> %s \n %s", num, conn.baseConn.LocalAddr(), conn.baseConn.RemoteAddr(), string(buf[:num]))
+	return num, err
+}
+
+// TCP不支持ReadFrom，但为了实现接口
+func (conn *tcpConnection) ReadFrom(buf []byte) (num int, raddr net.Addr, err error) {
+	num, err = conn.baseConn.Read(buf)
+	raddr = conn.baseConn.RemoteAddr()
+	return num, raddr, err
+}
+
+// TCP的WriteTo实际上就是Write
+func (conn *tcpConnection) WriteTo(buf []byte, raddr net.Addr) (num int, err error) {
+	num, err = conn.baseConn.Write(buf)
+	if err != nil {
+		return num, utils.NewError(err, conn.logKey, "writeTo", conn.baseConn.LocalAddr().String(), raddr.String())
+	}
+	logrus.Tracef("TCP writeTo %d bytes, %s -> %s \n %s", num, conn.baseConn.LocalAddr(), raddr.String(), string(buf[:num]))
+	return num, err
+}
+
+func (conn *tcpConnection) Close() error {
+	return conn.baseConn.Close()
+}
+
+func (conn *tcpConnection) LocalAddr() net.Addr {
+	return conn.laddr
+}
+
+func (conn *tcpConnection) RemoteAddr() net.Addr {
+	return conn.raddr
+}
+
+func (conn *tcpConnection) Network() string {
+	return strings.ToUpper(conn.baseConn.LocalAddr().Network())
+}
+
+func (conn *tcpConnection) SetDeadline(t time.Time) error {
+	return conn.baseConn.SetDeadline(t)
+}
+
+func (conn *tcpConnection) SetReadDeadline(t time.Time) error {
+	return conn.baseConn.SetReadDeadline(t)
+}
+
+func (conn *tcpConnection) SetWriteDeadline(t time.Time) error {
+	return conn.baseConn.SetWriteDeadline(t)
 }
 
 func newUDPConnection(baseConn net.Conn) Connection {
@@ -87,6 +158,15 @@ func newUDPConnection(baseConn net.Conn) Connection {
 		logKey:   "udpConnection",
 	}
 	return conn
+}
+
+// Connection implementation.
+type connection struct {
+	baseConn net.Conn
+	laddr    net.Addr
+	raddr    net.Addr
+	// mu       sync.RWMutex
+	logKey string
 }
 
 func (conn *connection) Read(buf []byte) (int, error) {

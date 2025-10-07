@@ -74,6 +74,7 @@ func handlerMessage(req *sip.Request, tx *sip.Transaction) {
 
 func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 	// 判断是否存在授权字段
+	logrus.Debugln("req:", req)
 	if hdrs := req.GetHeaders("Authorization"); len(hdrs) > 0 {
 		fromUser, ok := parserDevicesFromReqeust(req)
 		if !ok {

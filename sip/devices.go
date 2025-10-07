@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/panjjo/gosip/db"
@@ -101,7 +102,7 @@ type Channels struct {
 	// 视频FPS
 	FPS int `json:"fps"  gorm:"column:fps"`
 	//  pull 媒体服务器主动拉流，push 监控设备主动推流
-	StreamType string `json:"streamtype"  gorm:"column:streamtype"`
+	StreamType string `json:"streamtype" gorm:"column:streamtype;default:'push'"`
 	// streamtype=pull时，拉流地址
 	URL string `json:"url"  gorm:"column:url"`
 
@@ -191,7 +192,14 @@ func sipDeviceInfo(to Devices) {
 	}).SetContentType(&sip.ContentTypeXML).SetMethod(sip.MESSAGE)
 	req := sip.NewRequest("", sip.MESSAGE, to.addr.URI, sip.DefaultSipVersion, hb.Build(), sip.GetDeviceInfoXML(to.DeviceID))
 	req.SetDestination(to.source)
-	tx, err := srv.Request(req)
+	// 根据设备的传输方式发送请求
+	var tx *sip.Transaction
+	var err error
+	if strings.ToLower(to.TransPort) == "tcp" {
+		tx, err = srv.RequestWithProtocol(req, "tcp")
+	} else {
+		tx, err = srv.Request(req) // 默认UDP
+	}
 	if err != nil {
 		logrus.Warnln("sipDeviceInfo  error,", err)
 		return
@@ -210,7 +218,17 @@ func sipCatalog(to Devices) {
 	}).SetContentType(&sip.ContentTypeXML).SetMethod(sip.MESSAGE)
 	req := sip.NewRequest("", sip.MESSAGE, to.addr.URI, sip.DefaultSipVersion, hb.Build(), sip.GetCatalogXML(to.DeviceID))
 	req.SetDestination(to.source)
-	tx, err := srv.Request(req)
+
+	// 根据设备的连接类型发送请求
+	var tx *sip.Transaction
+	var err error
+	// 根据设备的传输方式发送请求
+	if strings.ToLower(to.TransPort) == "tcp" {
+		tx, err = srv.RequestWithProtocol(req, "tcp")
+	} else {
+		tx, err = srv.Request(req) // 默认UDP
+	}
+
 	if err != nil {
 		logrus.Warnln("sipCatalog  error,", err)
 		return
@@ -258,6 +276,7 @@ type MessageDeviceListResponse struct {
 	Item     []Channels `xml:"DeviceList>Item"`
 }
 
+// sipMessageCatalog 解析Sip中的Catalog信息入库
 func sipMessageCatalog(u Devices, body []byte) error {
 	message := &MessageDeviceListResponse{}
 	if err := utils.XMLDecode(body, message); err != nil {

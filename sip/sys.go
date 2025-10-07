@@ -28,6 +28,7 @@ func Start() {
 	srv = sip.NewServer()
 	srv.RegistHandler(sip.REGISTER, handlerRegister)
 	srv.RegistHandler(sip.MESSAGE, handlerMessage)
+	go srv.ListenTCPServer(config.TCP)
 	go srv.ListenUDPServer(config.UDP)
 }
 
