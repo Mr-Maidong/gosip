@@ -10,6 +10,53 @@ import (
 	sipapi "github.com/panjjo/gosip/sip"
 )
 
+// @Summary     设备通道同步接口
+// @Description 主动同步指定设备的通道信息
+// @Tags        channels
+// @Accept      x-www-form-urlencoded
+// @Produce     json
+// @Param       id   path     string true "设备id"
+// @Success     0    {object} string
+// @Failure     1000 {object} string
+// @Failure     1001 {object} string
+// @Failure     1002 {object} string
+// @Failure     1003 {object} string
+// @Router      /devices/{id}/channels_sync [post]
+func DeviceChannelsSync(c *gin.Context) {
+	deviceid := c.Param("id")
+
+	// 查询设备是否存在
+	device := &sipapi.Devices{
+		DeviceID: deviceid,
+	}
+	if err := db.Get(db.DBClient, device); err != nil {
+		if db.RecordNotFound(err) {
+			m.JsonResponse(c, m.StatusParamsERR, "设备id不存在")
+			return
+		}
+		m.JsonResponse(c, m.StatusDBERR, err)
+		return
+	}
+
+	// 检查设备是否在线
+	if !device.Regist {
+		m.JsonResponse(c, m.StatusParamsERR, "设备未注册")
+		return
+	}
+
+	// 检查设备是否在活跃设备列表中（获取完整的连接信息）
+	activeDevice, ok := sipapi.GetActiveDevice(device.DeviceID)
+	if !ok {
+		m.JsonResponse(c, m.StatusParamsERR, "设备不在线或连接信息不完整")
+		return
+	}
+
+	// 调用通道同步功能
+	go sipapi.SipCatalog(activeDevice)
+
+	m.JsonResponse(c, m.StatusSucc, "通道同步请求已发送")
+}
+
 // @Summary     通道新增接口
 // @Description 通过此接口在设备下新增通道，获取通道id
 // @Tags        channels

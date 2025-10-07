@@ -211,7 +211,17 @@ func sipDeviceInfo(to Devices) {
 	}
 }
 
-// sipCatalog 获取注册设备包含的列表
+// GetActiveDevice 获取活跃设备信息（包含完整的连接信息）
+func GetActiveDevice(deviceID string) (Devices, bool) {
+	return _activeDevices.Get(deviceID)
+}
+
+// SipCatalog 获取注册设备包含的列表 (公有函数，供外部包调用)
+func SipCatalog(to Devices) {
+	sipCatalog(to)
+}
+
+// sipCatalog 获取注册设备包含的列表 (私有函数，内部实现)
 func sipCatalog(to Devices) {
 	hb := sip.NewHeaderBuilder().SetTo(to.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{
 		Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),

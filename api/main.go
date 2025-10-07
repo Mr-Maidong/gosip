@@ -21,8 +21,9 @@ func Init(r *gin.Engine) {
 	}
 	// 通道类接口
 	{
-		r.GET("/channels", api.ChannelsList)
 		r.POST("/devices/:id/channels", api.ChannelCreate)
+		r.POST("/devices/:id/channels_sync", api.DeviceChannelsSync)
+		r.GET("/channels", api.ChannelsList)
 		r.POST("/channels/:id", api.ChannelsUpdate)
 		r.DELETE("/channels/:id", api.ChannelsDelete)
 	}
