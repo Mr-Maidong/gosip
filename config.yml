@@ -1,4 +1,4 @@
-mod: debug
+mod: release # debug release
 database:
   dialect: mysql # mysql postgresql sqllite
   url: mysip:Yangtao#123@tcp(192.168.1.191:13306)/mysip?charset=utf8&parseTime=True&loc=Local # 数据库地址

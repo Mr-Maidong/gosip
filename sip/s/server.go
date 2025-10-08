@@ -176,8 +176,6 @@ func (s *Server) handleTCPConnection(conn *net.TCPConn) {
 				// 没有完整消息，等待更多数据
 				break
 			}
-			logrus.Debugln("completeMessage:", string(completeMessage))
-
 			// 发送完整消息给解析器
 			parser.in <- newPacket(completeMessage, conn.RemoteAddr())
 
@@ -210,7 +208,7 @@ func (s *Server) handlerListenTCP(msgs chan Message, tcpConn Connection) {
 func (s *Server) handlerRequestTCP(msg *Request, tcpConn Connection) {
 	// 为TCP连接创建专门的Transaction
 	tx := s.newTCPTX(getTXKey(msg), tcpConn)
-	logrus.Traceln("receive TCP request from:", msg.Source(), ",method:", msg.Method(), "txKey:", tx.key, "message: \n", msg.String())
+	utils.LogSIPRequest(msg.Source().String(), msg.Method().String(), tx.key, msg.String())
 	s.hmu.RLock()
 	handler, ok := s.requestHandlers[msg.Method()]
 	s.hmu.RUnlock()
@@ -462,7 +460,7 @@ func (s *Server) handlerListen(msgs chan Message) {
 }
 func (s *Server) handlerRequest(msg *Request) {
 	tx := s.mustTX(getTXKey(msg))
-	logrus.Traceln("receive request from:", msg.Source(), ",method:", msg.Method(), "txKey:", tx.key, "message: \n", msg.String())
+	utils.LogSIPRequest(msg.Source().String(), msg.Method().String(), tx.key, msg.String())
 	s.hmu.RLock()
 	handler, ok := s.requestHandlers[msg.Method()]
 	s.hmu.RUnlock()
@@ -478,9 +476,11 @@ func (s *Server) handlerRequest(msg *Request) {
 func (s *Server) handlerResponse(msg *Response) {
 	tx := s.getTX(getTXKey(msg))
 	if tx == nil {
-		logrus.Infoln("not found tx. receive response from:", msg.Source(), "message: \n", msg.String())
+		utils.LogSIPMessage(logrus.InfoLevel,
+			fmt.Sprintf("not found tx. receive response from: %s", msg.Source()),
+			msg.String())
 	} else {
-		logrus.Traceln("receive response from:", msg.Source(), "txKey:", tx.key, "message: \n", msg.String())
+		utils.LogSIPResponse(msg.Source().String(), tx.key, msg.String())
 		tx.receiveResponse(msg)
 	}
 }

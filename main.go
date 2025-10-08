@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panjjo/gosip/api"
@@ -36,6 +38,9 @@ import (
 // @securityDefinitions.basic BasicAuth
 
 func main() {
+	// 显示启动横幅
+	showStartupBanner()
+
 	//pprof
 	go func() {
 		http.ListenAndServe("0.0.0.0:6060", nil)
@@ -43,6 +48,12 @@ func main() {
 
 	sipapi.Start()
 
+	// 根据配置设置 Gin 运行模式
+	if strings.ToUpper(m.MConfig.MOD) == "RELEASE" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
 	r := gin.Default()
 	r.Use(middleware.Recovery)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
@@ -63,4 +74,10 @@ func _cron() {
 	c.AddFunc("0 */5 * * * *", sipapi.CheckStreams) // 定时关闭推送流
 	c.AddFunc("0 */5 * * * *", sipapi.ClearFiles)   // 定时清理录制文件
 	c.Start()
+}
+
+func showStartupBanner() {
+	banner := `║		MySIP	GB28181 SIP Server v2.0		║`
+	fmt.Println(banner)
+	logrus.Infoln("GoSIP Server is starting...")
 }

@@ -113,14 +113,14 @@ func (tx *Transaction) receiveResponse(msg *Response) {
 
 // Respond Respond
 func (tx *Transaction) Respond(res *Response) error {
-	logrus.Traceln("send response,to:", res.dest.String(), "txkey:", tx.key, "message: \n", res.String())
+	utils.LogSIPSend("response", res.dest.String(), tx.key, res.String())
 	_, err := tx.conn.WriteTo([]byte(res.String()), res.dest)
 	return err
 }
 
 // Request Request
 func (tx *Transaction) Request(req *Request) error {
-	logrus.Traceln("send request,to:", req.dest.String(), "txkey:", tx.key, "message: \n", req.String())
+	utils.LogSIPSend("request", req.dest.String(), tx.key, req.String())
 	_, err := tx.conn.WriteTo([]byte(req.String()), req.dest)
 	return err
 }

@@ -78,6 +78,9 @@ func DefaultInfo() *SysInfo {
 var MConfig *Config
 
 func LoadConfig() {
+	// 首先设置日志格式化器
+	SetupLogger()
+
 	viper.SetConfigType("yml")
 	viper.SetConfigName("config")
 	viper.AddConfigPath("./")
@@ -98,7 +101,7 @@ func LoadConfig() {
 	if err != nil {
 		logrus.Fatalln("init config unmarshal error:", err)
 	}
-	logrus.Infof("config :%+v", MConfig)
+	// logrus.Infof("config :%+v", MConfig)
 	level, _ := logrus.ParseLevel(MConfig.LogLevel)
 	logrus.SetLevel(level)
 	db.DBClient, err = db.Open(MConfig.DB)

@@ -14,6 +14,11 @@ type MessageID string
 // If you're defining your own Method, uppercase is preferred but not compulsory.
 type RequestMethod string
 
+// String returns the string representation of the RequestMethod
+func (rm RequestMethod) String() string {
+	return string(rm)
+}
+
 // It's nicer to avoid using raw strings to represent methods, so the following standard
 // method names are defined here as constants for convenience.
 const (
@@ -149,7 +154,7 @@ func (msg *message) SetBody(body []byte, setContentLength bool) {
 	}
 }
 
-//Transport  Transport
+// Transport  Transport
 func (msg *message) Transport() string {
 	if viaHop, ok := msg.ViaHop(); ok {
 		return viaHop.Transport
@@ -178,7 +183,7 @@ func (msg *message) SetDestination(dest net.Addr) {
 }
 
 // URI  A SIP or SIPS URI, including all params and URI header params.
-//noinspection GoNameStartsWithPackageName
+// noinspection GoNameStartsWithPackageName
 type URI struct {
 	// True if and only if the URI is a SIPS URI.
 	FIsEncrypted bool
