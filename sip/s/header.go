@@ -35,7 +35,7 @@ type HeadersBuilder struct {
 func NewHeaderBuilder() *HeadersBuilder {
 	callID := CallID(utils.RandString(32))
 	maxForwards := MaxForwards(70)
-	userAgent := UserAgentHeader("GoSIP")
+	userAgent := UserAgentHeader("CT-SIP")
 	return &HeadersBuilder{
 		protocol:        "SIP",
 		protocolVersion: "2.0",
@@ -648,7 +648,7 @@ func (params *headerParams) Equals(other interface{}) bool {
 
 // ==================   ContentLengthHeader   ================
 
-//ContentLength ContentLength header
+// ContentLength ContentLength header
 type ContentLength uint32
 
 func (contentLength ContentLength) String() string {
