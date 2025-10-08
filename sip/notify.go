@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	// NotifyMethodDeviceUnknown 未知设备尝试注册通知
+	NotifyMethodDeviceUnknown = "devices.unknown"
 	// NotifyMethodUserActive 设备活跃状态通知
 	NotifyMethodDevicesActive = "devices.active"
 	// NotifyMethodUserRegister 设备注册通知
@@ -43,10 +45,22 @@ func notify(data *Notify) {
 	}
 }
 
+func notifyDeviceUnknown(deviceID, addr string) *Notify {
+	return &Notify{
+		Method: NotifyMethodDeviceUnknown,
+		Data: map[string]any{
+			"deviceid": deviceID,
+			"addr":     addr,
+			"time":     time.Now().Unix(),
+			"message":  "未知设备尝试注册，请在控制台添加该设备",
+		},
+	}
+}
+
 func notifyDevicesAcitve(id, status string) *Notify {
 	return &Notify{
 		Method: NotifyMethodDevicesActive,
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"deviceid": id,
 			"status":   status,
 			"time":     time.Now().Unix(),
@@ -64,7 +78,7 @@ func notifyDevicesRegister(u Devices) *Notify {
 func notifyChannelsActive(d Channels) *Notify {
 	return &Notify{
 		Method: NotifyMethodChannelsActive,
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"channelid": d.ChannelID,
 			"status":    d.Status,
 			"time":      time.Now().Unix(),
@@ -72,7 +86,7 @@ func notifyChannelsActive(d Channels) *Notify {
 	}
 }
 func notifyRecordStop(url string, req url.Values) *Notify {
-	d := map[string]interface{}{
+	d := map[string]any{
 		"url": fmt.Sprintf("%s/%s", config.Media.HTTP, url),
 	}
 	for k, v := range req {

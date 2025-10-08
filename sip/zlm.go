@@ -135,3 +135,70 @@ func zlmStopRecord(values url.Values) error {
 	}
 	return nil
 }
+
+// ZLM openRtpServer 请求结构
+type zlmOpenRtpServerReq struct {
+	Port      string `json:"port"`
+	StreamID  string `json:"stream_id"`
+	EnableTCP string `json:"enable_tcp"`
+}
+
+// ZLM openRtpServer 响应结构
+type zlmOpenRtpServerResp struct {
+	Code int `json:"code"`
+	Port int `json:"port"`
+}
+
+// zlm 开启 RTP 服务器，指定 streamId
+func zlmOpenRtpServer(req zlmOpenRtpServerReq) (zlmOpenRtpServerResp, error) {
+	res := zlmOpenRtpServerResp{}
+
+	params := url.Values{}
+	params.Set("secret", config.Media.Secret)
+	params.Set("stream_id", req.StreamID)
+	params.Set("enable_tcp", req.EnableTCP)
+	params.Set("port", req.Port)
+	if req.StreamID != "" {
+		params.Set("stream_id", req.StreamID)
+	}
+
+	body, err := utils.GetRequest(config.Media.RESTFUL + "/index/api/openRtpServer?" + params.Encode())
+	if err != nil {
+		logrus.Errorln("zlm openRtpServer fail,", err)
+		return res, err
+	}
+
+	if err = utils.JSONDecode(body, &res); err != nil {
+		logrus.Errorln("zlm openRtpServer decode fail,", err)
+		return res, err
+	}
+
+	logrus.Traceln("zlmOpenRtpServer success", string(body), req.StreamID)
+	return res, nil
+}
+
+// zlm 关闭 RTP 服务器
+func zlmCloseRtpServer(streamID string) error {
+	params := url.Values{}
+	params.Set("secret", config.Media.Secret)
+	params.Set("stream_id", streamID)
+
+	body, err := utils.GetRequest(config.Media.RESTFUL + "/index/api/closeRtpServer?" + params.Encode())
+	if err != nil {
+		logrus.Errorln("zlm closeRtpServer fail,", err)
+		return err
+	}
+
+	tmp := map[string]interface{}{}
+	if err = utils.JSONDecode(body, &tmp); err != nil {
+		logrus.Errorln("zlm closeRtpServer decode fail,", err)
+		return err
+	}
+
+	if code, ok := tmp["code"]; !ok || fmt.Sprint(code) != "0" {
+		return utils.NewError(nil, tmp)
+	}
+
+	logrus.Traceln("zlmCloseRtpServer success", streamID)
+	return nil
+}

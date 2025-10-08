@@ -26,8 +26,11 @@ func Start() {
 	LoadSYSInfo()
 
 	srv = sip.NewServer()
-	srv.RegistHandler(sip.REGISTER, handlerRegister)
+	srv.RegistHandler(sip.OPTIONS, handlerOptions)
 	srv.RegistHandler(sip.MESSAGE, handlerMessage)
+	srv.RegistHandler(sip.REGISTER, handlerRegister)
+	srv.RegistHandler(sip.NOTIFY, handlerNotify)
+	srv.RegistHandler(sip.BYE, handlerBye)
 	go srv.ListenTCPServer(config.TCP)
 	go srv.ListenUDPServer(config.UDP)
 }
@@ -102,6 +105,11 @@ func LoadSYSInfo() {
 	}
 	_sysinfo.MediaServerRtpIP = ipaddr.IP
 	_sysinfo.MediaServerRtpPort, _ = strconv.Atoi(url.Port())
+}
+
+// 新增函数：基于 deviceId 和 channelId 生成 StreamID
+func generateStreamID(deviceID, channelID string) string {
+	return fmt.Sprintf("%s_%s", deviceID, channelID)
 }
 
 // zlm接收到的ssrc为16进制。发起请求的ssrc为10进制

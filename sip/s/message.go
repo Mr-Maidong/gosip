@@ -29,10 +29,10 @@ const (
 	REGISTER RequestMethod = "REGISTER"
 	OPTIONS  RequestMethod = "OPTIONS"
 	// SUBSCRIBE RequestMethod = "SUBSCRIBE"
-	// NOTIFY  RequestMethod = "NOTIFY"
 	// REFER   RequestMethod = "REFER"
 	INFO    RequestMethod = "INFO"
 	MESSAGE RequestMethod = "MESSAGE"
+	NOTIFY  RequestMethod = "NOTIFY" // 取消注释或添加这一行
 )
 
 // Message introduces common SIP message RFC 3261 - 7.

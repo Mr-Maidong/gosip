@@ -3,6 +3,7 @@ package sipapi
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/panjjo/gosip/db"
 	sip "github.com/panjjo/gosip/sip/s"
@@ -114,9 +115,138 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 				go sipDeviceInfo(fromUser)
 				return
 			}
+		} else {
+			// 设备不存在于数据库中，发送通知提醒管理员
+			logrus.Warnf("未知设备尝试注册: DeviceID=%s, Addr=%s", fromUser.DeviceID, fromUser.addr.URI.String())
+			go notify(notifyDeviceUnknown(fromUser.DeviceID, fromUser.addr.URI.String()))
+			return
+		}
+	} else {
+		// 首次注册请求（无Authorization头），解析设备信息并记录
+		if fromUser, ok := parserDevicesFromReqeust(req); ok {
+			user := Devices{DeviceID: fromUser.DeviceID}
+			if err := db.Get(db.DBClient, &user); err != nil {
+				// 设备不存在，发送通知
+				logrus.Warnf("未知设备首次注册尝试: DeviceID=%s, Addr=%s", fromUser.DeviceID, fromUser.addr.URI.String())
+				go notify(notifyDeviceUnknown(fromUser.DeviceID, fromUser.addr.URI.String()))
+				return
+			}
 		}
 	}
 	resp := sip.NewResponseFromRequest("", req, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
 	resp.AppendHeader(&sip.GenericHeader{HeaderName: "WWW-Authenticate", Contents: fmt.Sprintf("Digest nonce=\"%s\", algorithm=MD5, realm=\"%s\",qop=\"auth\"", utils.RandString(32), _sysinfo.Region)})
 	tx.Respond(resp)
+}
+
+// handlerNotify 处理NOTIFY请求
+func handlerNotify(req *sip.Request, tx *sip.Transaction) {
+	logrus.Debugln("收到NOTIFY请求:", req)
+
+	// 解析设备信息
+	fromUser, ok := parserDevicesFromReqeust(req)
+	if !ok {
+		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil))
+		return
+	}
+
+	// 检查设备是否已注册
+	device, exists := _activeDevices.Get(fromUser.DeviceID)
+	if !exists {
+		// 设备未注册，返回401
+		logrus.Warnf("未注册设备发送NOTIFY: DeviceID=%s", fromUser.DeviceID)
+		resp := sip.NewResponseFromRequest("", req, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
+		tx.Respond(resp)
+		return
+	}
+
+	// 处理NOTIFY消息体（如果有的话）
+	if len, have := req.ContentLength(); have && !len.Equals(0) {
+		body := req.Body()
+		logrus.Debugf("NOTIFY消息体: DeviceID=%s, Body=%s", fromUser.DeviceID, string(body))
+
+		// 这里可以根据需要解析NOTIFY的具体内容
+		// 例如：设备状态变化、报警信息等
+
+		// 可以选择性地处理不同类型的NOTIFY消息
+		// 目前先简单记录日志
+	}
+
+	// 更新设备活跃状态
+	device.ActiveAt = time.Now().Unix()
+	_activeDevices.Store(fromUser.DeviceID, device)
+
+	// 返回200 OK响应
+	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil))
+
+	logrus.Debugf("NOTIFY处理完成: DeviceID=%s", fromUser.DeviceID)
+}
+
+// handlerBye 处理BYE请求
+func handlerBye(req *sip.Request, tx *sip.Transaction) {
+	logrus.Debugln("收到BYE请求:", req)
+
+	// 解析设备信息
+	fromUser, ok := parserDevicesFromReqeust(req)
+	if !ok {
+		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil))
+		return
+	}
+
+	// 检查设备是否已注册
+	_, exists := _activeDevices.Get(fromUser.DeviceID)
+	if !exists {
+		// 设备未注册，返回401
+		logrus.Warnf("未注册设备发送BYE: DeviceID=%s", fromUser.DeviceID)
+		resp := sip.NewResponseFromRequest("", req, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
+		tx.Respond(resp)
+		return
+	}
+
+	// 处理BYE请求 - 通常用于结束会话
+	// 可以根据Call-ID查找并清理相关的流媒体会话
+	if callID, ok := req.CallID(); ok {
+		logrus.Infof("设备 %s 请求结束会话: CallID=%s", fromUser.DeviceID, string(*callID))
+
+		// 查找并停止相关流
+		go func() {
+			// 遍历活跃流，找到匹配的CallID并停止
+			StreamList.Response.Range(func(key, value interface{}) bool {
+				if stream, ok := value.(*Streams); ok {
+					if stream.CallID == string(*callID) {
+						logrus.Infof("找到匹配的流，准备停止: StreamID=%s, CallID=%s", stream.StreamID, stream.CallID)
+						// 调用停止流的函数
+						SipStopPlay(stream.StreamID)
+					}
+				}
+				return false // 找到匹配项后停止遍历
+			})
+		}()
+	}
+
+	// 返回200 OK响应
+	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil))
+
+	logrus.Debugf("BYE处理完成: DeviceID=%s", fromUser.DeviceID)
+}
+
+// handlerOptions 处理OPTIONS请求
+func handlerOptions(req *sip.Request, tx *sip.Transaction) {
+	logrus.Debugln("收到OPTIONS请求:", req)
+
+	// 解析设备信息
+	fromUser, ok := parserDevicesFromReqeust(req)
+	if !ok {
+		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil))
+		return
+	}
+
+	// 返回支持的方法列表
+	resp := sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil)
+	resp.AppendHeader(&sip.GenericHeader{
+		HeaderName: "Allow",
+		Contents:   "REGISTER, MESSAGE, NOTIFY, BYE, OPTIONS, INFO, INVITE, ACK, CANCEL",
+	})
+	tx.Respond(resp)
+
+	logrus.Debugf("OPTIONS处理完成: DeviceID=%s", fromUser.DeviceID)
 }

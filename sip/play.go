@@ -35,9 +35,9 @@ func SipPlay(data *Streams) (*Streams, error) {
 
 	default:
 		// 推流模式要求设备在线且活跃
-		if time.Now().Unix()-channel.Active > 30*60 || channel.Status != m.DeviceStatusON {
-			return nil, errors.New("通道已离线")
-		}
+		// if time.Now().Unix()-channel.Active > 30*60 || channel.Status != m.DeviceStatusON {
+		// 	return nil, errors.New("通道已离线")
+		// }
 		user, ok := _activeDevices.Get(channel.DeviceID)
 		if !ok {
 			return nil, errors.New("设备已离线")
@@ -46,7 +46,26 @@ func SipPlay(data *Streams) (*Streams, error) {
 		if data.StreamID == "" {
 			ssrcLock.Lock()
 			data.ssrc = getSSRC(data.T)
-			data.StreamID = ssrc2stream(data.ssrc)
+			// data.StreamID = ssrc2stream(data.ssrc)
+			data.StreamID = generateStreamID(data.DeviceID, data.ChannelID)
+
+			// 在 ZLM 中开启 RTP 服务器，指定自定义 streamId
+			rtpReq := zlmOpenRtpServerReq{
+				Port:      "0", // 0 表示让 ZLM 自动分配端口
+				StreamID:  data.StreamID,
+				EnableTCP: "1", // 默认开启 TCP
+			}
+
+			rtpResp, err := zlmOpenRtpServer(rtpReq)
+			if err != nil {
+				ssrcLock.Unlock()
+				return nil, fmt.Errorf("开启 ZLM RTP 服务器失败: %v", err)
+			}
+
+			// 更新媒体服务器端口（如果 ZLM 返回了新端口）
+			if rtpResp.Port > 0 {
+				_sysinfo.MediaServerRtpPort = rtpResp.Port
+			}
 
 			// 成功后保存
 			db.Create(db.DBClient, data)
@@ -189,6 +208,11 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 // sip 停止播放
 func SipStopPlay(ssrc string) {
 	zlmCloseStream(ssrc)
+	// 关闭 ZLM RTP 服务器
+	if err := zlmCloseRtpServer(ssrc); err != nil {
+		logrus.Errorln("关闭 ZLM RTP 服务器失败:", err)
+	}
+
 	data, ok := StreamList.Response.Load(ssrc)
 	if !ok {
 		return

@@ -25,7 +25,8 @@ gb28181: # gb28181 域，系统id，用户id，通道id，用户数量，初次�
   cid:    34020000001318       # 通道前缀
   dnum:   0 # 设备id = did + dnum
   cnum:   0 # 通道id = cid + cnum
-notify:  
+notify:
+  devices_unknown: # 未知设备通知
   devices_active: # 设备活跃通知
   devices_regiest: #设备注册成功通知
   channels_active:  # 通道活跃通知
