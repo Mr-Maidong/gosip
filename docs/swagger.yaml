@@ -7,7 +7,6 @@ definitions:
           $ref: '#/definitions/sipapi.Channels'
         type: array
       total:
-        format: int64
         type: integer
     type: object
   api.DevicesListResponse:
@@ -17,7 +16,6 @@ definitions:
           $ref: '#/definitions/sipapi.Devices'
         type: array
       total:
-        format: int64
         type: integer
     type: object
   api.StreamsListResponse:
@@ -27,7 +25,6 @@ definitions:
           $ref: '#/definitions/sipapi.Streams'
         type: array
       total:
-        format: int64
         type: integer
     type: object
   m.SysInfo:
@@ -562,47 +559,6 @@ paths:
       summary: 设备列表接口
       tags:
       - devices
-    post:
-      consumes:
-      - application/x-www-form-urlencoded
-      description: 通过此接口新增一个设备，获取设备id
-      parameters:
-      - description: 设备密码(GB28181认证密码)
-        in: formData
-        name: pwd
-        required: true
-        type: string
-      - description: 设备名称
-        in: formData
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "0":
-          description: ""
-          schema:
-            $ref: '#/definitions/sipapi.Devices'
-        "1000":
-          description: ""
-          schema:
-            type: string
-        "1001":
-          description: ""
-          schema:
-            type: string
-        "1002":
-          description: ""
-          schema:
-            type: string
-        "1003":
-          description: ""
-          schema:
-            type: string
-      summary: 设备新增接口
-      tags:
-      - devices
   /devices/{id}:
     delete:
       consumes:
@@ -770,6 +726,52 @@ paths:
       summary: 设备通道同步接口
       tags:
       - channels
+  /devices/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 通过此接口新增一个设备，获取设备id
+      parameters:
+      - description: 设备密码(GB28181认证密码)
+        in: formData
+        name: pwd
+        required: true
+        type: string
+      - description: 设备名称
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: 设备ID(可选，不提供则自动生成)
+        in: formData
+        name: deviceId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/sipapi.Devices'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 设备新增接口
+      tags:
+      - devices
   /streams:
     get:
       consumes:

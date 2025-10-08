@@ -14,7 +14,7 @@ func Init(r *gin.Engine) {
 	// 设备类接口
 	{
 		r.GET("/devices", api.DevicesList)
-		r.POST("/devices", api.DevicesCreate)
+		r.POST("/devices/create", api.DevicesCreate)
 		r.POST("/devices/:id", api.DevicesUpdate)
 		r.DELETE("/devices/:id", api.DevicesDelete)
 

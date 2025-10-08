@@ -15,14 +15,15 @@ import (
 // @Tags        devices
 // @Accept      x-www-form-urlencoded
 // @Produce     json
-// @Param       pwd  formData string true "设备密码(GB28181认证密码)"
-// @Param       name formData string true "设备名称"
+// @Param       pwd      formData string true  "设备密码(GB28181认证密码)"
+// @Param       name     formData string true  "设备名称"
+// @Param       deviceId formData string false "设备ID(可选，不提供则自动生成)"
 // @Success     0    {object} sipapi.Devices
 // @Failure     1000 {object} string
 // @Failure     1001 {object} string
 // @Failure     1002 {object} string
 // @Failure     1003 {object} string
-// @Router      /devices [post]
+// @Router      /devices/create [post]
 func DevicesCreate(c *gin.Context) {
 	pwd := c.PostForm("pwd")
 	if pwd == "" {
@@ -30,8 +31,17 @@ func DevicesCreate(c *gin.Context) {
 		return
 	}
 	name := c.PostForm("name")
+	deviceID := c.PostForm("deviceId")
+	if deviceID == "" {
+		deviceID = fmt.Sprintf("%s%06d", m.MConfig.GB28181.DID, m.MConfig.GB28181.DNUM+1)
+	} else {
+		if err := db.Get(db.DBClient, &sipapi.Devices{DeviceID: deviceID}); err == nil {
+			m.JsonResponse(c, m.StatusParamsERR, "设备id已存在")
+			return
+		}
+	}
 	device := sipapi.Devices{
-		DeviceID: fmt.Sprintf("%s%06d", m.MConfig.GB28181.DID, m.MConfig.GB28181.DNUM+1),
+		DeviceID: deviceID,
 		Region:   m.MConfig.GB28181.Region,
 		PWD:      pwd,
 		Name:     name,
