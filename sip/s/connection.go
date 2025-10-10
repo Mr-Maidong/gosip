@@ -210,7 +210,6 @@ func (conn *connection) WriteTo(buf []byte, raddr net.Addr) (num int, err error)
 	if err != nil {
 		return num, utils.NewError(err, conn.logKey, "writeTo", conn.baseConn.LocalAddr().String(), raddr.String())
 	}
-	logrus.Tracef("writeTo %d , %s -> %s \n %s", num, conn.baseConn.LocalAddr(), raddr.String(), string(buf[:num]))
 	return num, err
 }
 

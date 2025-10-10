@@ -26,6 +26,11 @@ func SipPlay(data *Streams) (*Streams, error) {
 		return nil, err
 	}
 
+	// 若通道的播放类型为空，默认按 push 处理
+	if channel.StreamType == "" {
+		channel.StreamType = m.StreamTypePush
+	}
+
 	data.DeviceID = channel.DeviceID
 	data.StreamType = channel.StreamType
 	// 使用通道的播放模式进行处理
@@ -239,6 +244,7 @@ func SipStopPlay(ssrc string) {
 		return
 	}
 	play := data.(*Streams)
+	logrus.Infoln("SipStopPlay", play.StreamType, m.StreamTypePush)
 	if play.StreamType == m.StreamTypePush {
 		// 推流，需要发送关闭请求
 		resp := play.Resp

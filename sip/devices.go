@@ -332,6 +332,7 @@ func sipMessageCatalog(u Devices, body []byte) error {
 					SafetyWay:    d.SafetyWay,
 					RegisterWay:  d.RegisterWay,
 					Secrecy:      d.Secrecy,
+					StreamType:   m.StreamTypePush,
 				}
 				if err = db.Create(db.DBClient, &channel); err != nil {
 					logrus.Errorln("创建通道失败:", err, "channelid:", d.ChannelID, "deviceid:", message.DeviceID)
