@@ -101,7 +101,8 @@ func parseAddressHeader(headerName string, headerText string) (
 		// although we do not check for this below.
 		for idx := 0; idx < len(displayNames); idx++ {
 			var header Header
-			if headerName == "to" || headerName == "t" {
+			switch headerName {
+			case "to", "t":
 				if idx > 0 {
 					// Only a single To header is permitted in a SIP message.
 					return nil,
@@ -115,7 +116,7 @@ func parseAddressHeader(headerName string, headerText string) (
 					Params:      paramSets[idx],
 				}
 				header = &toHeader
-			} else if headerName == "from" || headerName == "f" {
+			case "from", "f":
 				if idx > 0 {
 					// Only a single From header is permitted in a SIP message.
 					return nil,
@@ -132,7 +133,7 @@ func parseAddressHeader(headerName string, headerText string) (
 					Params:      paramSets[idx],
 				}
 				header = &fromHeader
-			} else if headerName == "contact" || headerName == "m" {
+			case "contact", "m":
 				contactHeader := ContactHeader{
 					DisplayName: displayNames[idx],
 					Address:     uris[idx],
@@ -236,11 +237,12 @@ func parseViaHeader(headerName string, headerText string) (
 		// first non-whitespace char.
 		initialSpaces := len(parts[2]) - len(strings.TrimLeft(parts[2], abnfWs))
 		sentByIdx := strings.IndexAny(parts[2][initialSpaces:], abnfWs) + initialSpaces + 1
-		if sentByIdx == 0 {
+		switch sentByIdx {
+		case 0:
 			err = fmt.Errorf("expected whitespace after sent-protocol part "+
 				"in via header '%s'", section)
 			return
-		} else if sentByIdx == 1 {
+		case 1:
 			err = fmt.Errorf("empty transport field in via header '%s'", section)
 			return
 		}
@@ -579,9 +581,9 @@ func (p *parser) start() {
 	for !p.isStop {
 		termErr = nil
 		packet = <-p.in
-		startLine, err := packet.nextLine()
-		if err != nil {
-			logrus.Errorln(err, "parserMessage", "getStartLine", startLine)
+		startLine, parseErr := packet.nextLine()
+		if parseErr != nil {
+			logrus.Errorln(parseErr, "parserMessage", "getStartLine", startLine)
 			continue
 		}
 		if isRequest(startLine) {
@@ -603,7 +605,7 @@ func (p *parser) start() {
 			continue
 		}
 		if termErr != nil {
-			logrus.Errorln(err)
+			logrus.Errorln(termErr)
 			continue
 		}
 		var buffer bytes.Buffer
@@ -615,7 +617,7 @@ func (p *parser) start() {
 				if err == nil {
 					headers = append(headers, newHeaders...)
 				} else {
-					logrus.Warnf("skip header '%s' due to error: %s", buffer, err)
+					logrus.Warnf("skip header '%s' due to error: %s", buffer.String(), err)
 				}
 				buffer.Reset()
 			}

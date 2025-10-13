@@ -56,8 +56,6 @@ func handlerMessage(req *sip.Request, tx *sip.Transaction) {
 		// heardbeat
 		if err := sipMessageKeepalive(u, body); err == nil {
 			tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil))
-			// // 心跳后同步注册设备列表信息
-			// sipCatalog(u)
 			return
 		}
 	case "RecordInfo":

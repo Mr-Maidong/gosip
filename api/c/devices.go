@@ -2,6 +2,8 @@ package api
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panjjo/gorm"
@@ -193,6 +195,142 @@ func DevicesDelete(c *gin.Context) {
 	}
 	tx.Commit()
 	m.JsonResponse(c, m.StatusSucc, "")
+}
+
+// 定义PTZ控制类型为字符串类型枚举
+type PTZControlType string
+
+const (
+	PTZ_CTRL_HALT      PTZControlType = "halt"
+	PTZ_CTRL_RIGHT     PTZControlType = "right"
+	PTZ_CTRL_RIGHTUP   PTZControlType = "rightup"
+	PTZ_CTRL_UP        PTZControlType = "up"
+	PTZ_CTRL_LEFTUP    PTZControlType = "leftup"
+	PTZ_CTRL_LEFT      PTZControlType = "left"
+	PTZ_CTRL_LEFTDOWN  PTZControlType = "leftdown"
+	PTZ_CTRL_DOWN      PTZControlType = "down"
+	PTZ_CTRL_RIGHTDOWN PTZControlType = "rightdown"
+	PTZ_CTRL_ZOOM      PTZControlType = "zoom"
+	PTZ_CTRL_IRIS      PTZControlType = "iris"
+	PTZ_CTRL_FOCUS     PTZControlType = "focus"
+)
+
+// ParsePTZCmd 解析PTZ命令
+func ParsePTZCmd(ptzType PTZControlType, paramValue int) string {
+	ptzCmdStr := [8]byte{0xA5, 0x0F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}
+
+	// 如果参数值为0，则停止移动
+	actualType := ptzType
+	if paramValue == 0 {
+		actualType = PTZ_CTRL_HALT
+	}
+
+	// 根据控制类型设置命令参数
+	switch actualType {
+	case PTZ_CTRL_HALT:
+		// 停止命令，保持默认值
+	case PTZ_CTRL_RIGHT: // 右
+		ptzCmdStr[3] = 0x01
+		ptzCmdStr[4] = byte(paramValue & 0xFF)
+	case PTZ_CTRL_RIGHTUP: // 右上
+		ptzCmdStr[3] = 0x09
+		ptzCmdStr[4] = byte(paramValue & 0xFF)
+		ptzCmdStr[5] = byte(paramValue & 0xFF)
+	case PTZ_CTRL_UP: // 上
+		ptzCmdStr[3] = 0x08
+		ptzCmdStr[5] = byte(paramValue & 0xFF)
+	case PTZ_CTRL_LEFTUP: // 左上
+		ptzCmdStr[3] = 0x0A
+		ptzCmdStr[4] = byte(paramValue & 0xFF)
+		ptzCmdStr[5] = byte(paramValue & 0xFF)
+	case PTZ_CTRL_LEFT: // 左
+		ptzCmdStr[3] = 0x02
+		ptzCmdStr[4] = byte(paramValue & 0xFF)
+	case PTZ_CTRL_LEFTDOWN: // 左下
+		ptzCmdStr[3] = 0x06
+		ptzCmdStr[4] = byte(paramValue & 0xFF)
+		ptzCmdStr[5] = byte(paramValue & 0xFF)
+	case PTZ_CTRL_DOWN: // 下
+		ptzCmdStr[3] = 0x04
+		ptzCmdStr[5] = byte(paramValue & 0xFF)
+	case PTZ_CTRL_RIGHTDOWN: // 右下
+		ptzCmdStr[3] = 0x05
+		ptzCmdStr[4] = byte(paramValue & 0xFF)
+		ptzCmdStr[5] = byte(paramValue & 0xFF)
+	case PTZ_CTRL_ZOOM: // 变焦
+		if paramValue > 0 {
+			ptzCmdStr[3] = 0x10
+			ptzCmdStr[6] = byte((paramValue & 0x0F) << 4)
+		} else if paramValue < 0 {
+			ptzCmdStr[3] = 0x20
+			ptzCmdStr[6] = byte(((-paramValue) & 0x0F) << 4)
+		}
+	case PTZ_CTRL_IRIS: // 光圈
+		if paramValue > 0 {
+			ptzCmdStr[3] = 0x44
+			ptzCmdStr[5] = byte(paramValue & 0xFF)
+		} else if paramValue < 0 {
+			ptzCmdStr[3] = 0x48
+			ptzCmdStr[5] = byte((-paramValue) & 0xFF)
+		}
+	case PTZ_CTRL_FOCUS: // 聚焦
+		if paramValue > 0 {
+			ptzCmdStr[3] = 0x41
+			ptzCmdStr[4] = byte(paramValue & 0xFF)
+		} else if paramValue < 0 {
+			ptzCmdStr[3] = 0x42
+			ptzCmdStr[4] = byte((-paramValue) & 0xFF)
+		}
+	default:
+		// 未知类型，保持默认值
+	}
+
+	// 计算校验和（第8个字节为前7个字节的和）
+	for i := 0; i < 7; i++ {
+		ptzCmdStr[7] += ptzCmdStr[i]
+	}
+
+	// 将字节数组转换为十六进制字符串
+	var cmdBuilder strings.Builder
+	for i := 0; i < 8; i++ {
+		cmdBuilder.WriteString(fmt.Sprintf("%02X", ptzCmdStr[i]))
+	}
+	cmdstr := cmdBuilder.String()
+
+	return cmdstr
+}
+
+// @Summary     设备PTZ云台控制
+// @Description 通过此接口控制设备云台方向和速度
+// @Tags        devices
+// @Accept      x-www-form-urlencoded
+// @Produce     json
+// @Param       device_id  formData string true  "设备ID"
+// @Param       ptz_type formData string true  "方向(halt,right,rightup,up,leftup,left,leftdown,down,rightdown,zoom,iris,focus)"
+// @Param       speed     formData int    false  "速度(1-255)"
+// @Success     0    {object} string
+// @Failure     1000 {object} string
+// @Router      /devices/ptz [post]
+func DevicesPTZControl(c *gin.Context) {
+	deviceId := c.PostForm("device_id")
+	ptzType := c.PostForm("ptz_type")
+	speedStr := c.PostForm("speed")
+	ptzSpeed := 100
+	if speedStr != "" {
+		ptzSpeed, _ = strconv.Atoi(speedStr)
+	}
+	activeDevice, ok := sipapi.GetActiveDevice(deviceId)
+	if !ok {
+		m.JsonResponse(c, m.StatusParamsERR, "设备未注册或离线")
+		return
+	}
+	ptzCmd := ParsePTZCmd(PTZControlType(ptzType), ptzSpeed)
+	err := sipapi.SipPTZControl(activeDevice, "", ptzCmd)
+	if err != nil {
+		m.JsonResponse(c, m.StatusDBERR, err.Error())
+		return
+	}
+	m.JsonResponse(c, m.StatusSucc, "云台控制指令已发送")
 }
 
 // // 视频流录制 默认保存为mp4文件，录制最多录制10分钟，10分钟后自动停止，一个流只能存在一个录制

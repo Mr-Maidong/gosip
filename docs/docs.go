@@ -512,6 +512,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/devices/ptz": {
+            "post": {
+                "description": "通过此接口控制设备云台方向和速度",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "设备PTZ云台控制",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "设备ID",
+                        "name": "device_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "方向(halt,right,rightup,up,leftup,left,leftdown,down,rightdown,zoom,iris,focus)",
+                        "name": "ptz_type",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "速度(1-255)",
+                        "name": "speed",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "0": {
+                        "description": "",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "1000": {
+                        "description": "",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/devices/{id}": {
             "post": {
                 "description": "调整设备信息",

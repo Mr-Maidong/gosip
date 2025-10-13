@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -216,13 +217,8 @@ func GetActiveDevice(deviceID string) (Devices, bool) {
 	return _activeDevices.Get(deviceID)
 }
 
-// SipCatalog 获取注册设备包含的列表 (公有函数，供外部包调用)
+// SipCatalog 获取注册设备包含的列表 (私有函数，内部实现)
 func SipCatalog(to Devices) {
-	sipCatalog(to)
-}
-
-// sipCatalog 获取注册设备包含的列表 (私有函数，内部实现)
-func sipCatalog(to Devices) {
 	hb := sip.NewHeaderBuilder().SetTo(to.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{
 		Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
 	}).SetContentType(&sip.ContentTypeXML).SetMethod(sip.MESSAGE)
@@ -240,14 +236,73 @@ func sipCatalog(to Devices) {
 	}
 
 	if err != nil {
-		logrus.Warnln("sipCatalog  error,", err)
+		logrus.Warnln("SipCatalog  error,", err)
 		return
 	}
 	_, err = sipResponse(tx)
 	if err != nil {
-		logrus.Warnln("sipCatalog  response error,", err)
+		logrus.Warnln("SipCatalog  response error,", err)
 		return
 	}
+}
+
+// 构造带通道ID的新addr
+func buildChannelAddr(channelID, host, port string) *sip.Address {
+	intPort, _ := strconv.Atoi(port)
+	uri := &sip.URI{
+		FIsEncrypted: true,
+		FUser:        sip.String{Str: channelID}, // 注意字段名大小写
+		FHost:        host,
+		FPort:        sip.NewPort(intPort),
+	}
+	return &sip.Address{
+		URI: uri,
+	}
+}
+
+// sipPTZControl 向设备发送云台控制指令
+func SipPTZControl(device Devices, channelID string, ptzCmd string) error {
+	hb := sip.NewHeaderBuilder().
+		SetTo(device.addr).
+		SetFrom(_serverDevices.addr).
+		AddVia(&sip.ViaHop{
+			Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
+		}).
+		SetContentType(&sip.ContentTypeXML).
+		SetMethod(sip.MESSAGE)
+
+	// 组装目标地址
+	toAddr := device.addr
+	if channelID != "" {
+		toAddr = buildChannelAddr(channelID, device.Host, device.Port)
+		logrus.Infoln("PTZControl to channel:", channelID, "addr:", toAddr)
+	} else {
+		channelID = device.DeviceID
+	}
+
+	req := sip.NewRequest(
+		"", sip.MESSAGE, toAddr.URI, sip.DefaultSipVersion, hb.Build(),
+		sip.GetPTZControlXML(channelID, ptzCmd),
+	)
+	req.SetDestination(device.source)
+
+	var tx *sip.Transaction
+	var err error
+	if strings.ToLower(device.TransPort) == "tcp" {
+		tx, err = srv.RequestWithProtocol(req, "tcp")
+	} else {
+		tx, err = srv.Request(req)
+	}
+	if err != nil {
+		logrus.Warnln("PTZControl send error,", err)
+		return err
+	}
+	_, err = sipResponse(tx)
+	if err != nil {
+		logrus.Warnln("PTZControl response error,", err)
+		return err
+	}
+	return nil
 }
 
 // MessageDeviceInfoResponse 主设备明细返回结构
@@ -287,7 +342,7 @@ type MessageDeviceListResponse struct {
 }
 
 // sipMessageCatalog 解析Sip中的Catalog信息入库
-func sipMessageCatalog(u Devices, body []byte) error {
+func sipMessageCatalog(_ Devices, body []byte) error {
 	message := &MessageDeviceListResponse{}
 	if err := utils.XMLDecode(body, message); err != nil {
 		logrus.Errorln("Message Unmarshal xml err:", err, "body:", string(body))

@@ -107,21 +107,38 @@ var (
 <DeviceID>%s</DeviceID>
 </Query>
 `
+	// PTZControlXML 摄像头云台控制xml样式
+	PTZControlXML = `<?xml version="1.0" encoding="GB2312"?>
+<Control>
+<CmdType>DeviceControl</CmdType>
+<SN>%d</SN>
+<DeviceID>%s</DeviceID>
+<PTZCmd>%s</PTZCmd>
+<Info>
+<ControlPriority>5</ControlPriority>
+</Info>
+</Control>
+`
 )
 
 // GetDeviceInfoXML 获取设备详情指令
-func GetDeviceInfoXML(id string) []byte {
-	return []byte(fmt.Sprintf(DeviceInfoXML, utils.RandInt(100000, 999999), id))
+func GetDeviceInfoXML(deviceID string) []byte {
+	return fmt.Appendf(nil, DeviceInfoXML, utils.RandInt(100000, 999999), deviceID)
 }
 
 // GetCatalogXML 获取NVR下设备列表指令
-func GetCatalogXML(id string) []byte {
-	return []byte(fmt.Sprintf(CatalogXML, utils.RandInt(100000, 999999), id))
+func GetCatalogXML(deviceID string) []byte {
+	return fmt.Appendf(nil, CatalogXML, utils.RandInt(100000, 999999), deviceID)
 }
 
 // GetRecordInfoXML 获取录像文件列表指令
-func GetRecordInfoXML(id string, sceqNo int, start, end int64) []byte {
-	return []byte(fmt.Sprintf(RecordInfoXML, sceqNo, id, time.Unix(start, 0).Format("2006-01-02T15:04:05"), time.Unix(end, 0).Format("2006-01-02T15:04:05")))
+func GetRecordInfoXML(deviceID string, sceqNo int, start, end int64) []byte {
+	return fmt.Appendf(nil, RecordInfoXML, sceqNo, deviceID, time.Unix(start, 0).Format("2006-01-02T15:04:05"), time.Unix(end, 0).Format("2006-01-02T15:04:05"))
+}
+
+// GetPTZControlXML 获取摄像头云台控制指令
+func GetPTZControlXML(deviceID string, ptzCmd string) []byte {
+	return fmt.Appendf(nil, PTZControlXML, utils.RandInt(100000, 999999), deviceID, ptzCmd)
 }
 
 // RFC3261BranchMagicCookie RFC3261BranchMagicCookie

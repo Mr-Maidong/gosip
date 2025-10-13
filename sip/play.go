@@ -117,7 +117,7 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 		Description: sdp.MediaDescription{
 			Type:     "video",
 			Port:     _sysinfo.MediaServerRtpPort,
-			Formats:  []string{"96", "98", "97"},
+			Formats:  []string{"96"},
 			Protocol: protocal,
 		},
 	}
@@ -127,28 +127,6 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 		video.AddAttribute("connection", "new")
 	}
 	video.AddAttribute("rtpmap", "96", "PS/90000")
-	video.AddAttribute("rtpmap", "98", "H264/90000")
-	video.AddAttribute("rtpmap", "97", "MPEG4/90000")
-
-	// 音频媒体描述
-	audio := sdp.Media{
-		Description: sdp.MediaDescription{
-			Type:     "audio",
-			Port:     _sysinfo.MediaServerRtpPort,
-			Formats:  []string{"8", "0", "18", "99"},
-			Protocol: protocal,
-		},
-	}
-	audio.AddAttribute("recvonly")
-	if data.T == 0 {
-		audio.AddAttribute("setup", "passive")
-		audio.AddAttribute("connection", "new")
-	}
-	// 常用音频编码格式
-	audio.AddAttribute("rtpmap", "8", "PCMA/8000")    // G.711 A-law
-	audio.AddAttribute("rtpmap", "0", "PCMU/8000")    // G.711 μ-law
-	audio.AddAttribute("rtpmap", "18", "G729/8000")   // G.729
-	audio.AddAttribute("rtpmap", "99", "G7221/16000") // G.722.1
 
 	// defining message
 	msg := &sdp.Message{
@@ -167,7 +145,7 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 				End:   data.E,
 			},
 		},
-		Medias: []sdp.Media{video, audio}, // 同时包含视频和音频
+		Medias: []sdp.Media{video}, // 同时包含视频和音频
 		SSRC:   data.ssrc,
 	}
 	if data.T == 1 {

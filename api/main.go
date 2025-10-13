@@ -17,7 +17,7 @@ func Init(r *gin.Engine) {
 		r.POST("/devices/create", api.DevicesCreate)
 		r.POST("/devices/:id", api.DevicesUpdate)
 		r.DELETE("/devices/:id", api.DevicesDelete)
-
+		r.POST("/devices/ptz", api.DevicesPTZControl)
 	}
 	// 通道类接口
 	{
