@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
@@ -246,22 +245,8 @@ func SipCatalog(to Devices) {
 	}
 }
 
-// 构造带通道ID的新addr
-func buildChannelAddr(channelID, host, port string) *sip.Address {
-	intPort, _ := strconv.Atoi(port)
-	uri := &sip.URI{
-		FIsEncrypted: true,
-		FUser:        sip.String{Str: channelID}, // 注意字段名大小写
-		FHost:        host,
-		FPort:        sip.NewPort(intPort),
-	}
-	return &sip.Address{
-		URI: uri,
-	}
-}
-
 // sipPTZControl 向设备发送云台控制指令
-func SipPTZControl(device Devices, channelID string, ptzCmd string) error {
+func SipPTZControl(device Devices, ptzCmd string) error {
 	hb := sip.NewHeaderBuilder().
 		SetTo(device.addr).
 		SetFrom(_serverDevices.addr).
@@ -273,16 +258,10 @@ func SipPTZControl(device Devices, channelID string, ptzCmd string) error {
 
 	// 组装目标地址
 	toAddr := device.addr
-	if channelID != "" {
-		toAddr = buildChannelAddr(channelID, device.Host, device.Port)
-		logrus.Infoln("PTZControl to channel:", channelID, "addr:", toAddr)
-	} else {
-		channelID = device.DeviceID
-	}
 
 	req := sip.NewRequest(
 		"", sip.MESSAGE, toAddr.URI, sip.DefaultSipVersion, hb.Build(),
-		sip.GetPTZControlXML(channelID, ptzCmd),
+		sip.GetPTZControlXML(device.DeviceID, ptzCmd),
 	)
 	req.SetDestination(device.source)
 

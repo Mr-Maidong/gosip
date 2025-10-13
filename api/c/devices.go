@@ -325,7 +325,7 @@ func DevicesPTZControl(c *gin.Context) {
 		return
 	}
 	ptzCmd := ParsePTZCmd(PTZControlType(ptzType), ptzSpeed)
-	err := sipapi.SipPTZControl(activeDevice, "", ptzCmd)
+	err := sipapi.SipPTZControl(activeDevice, ptzCmd)
 	if err != nil {
 		m.JsonResponse(c, m.StatusDBERR, err.Error())
 		return
