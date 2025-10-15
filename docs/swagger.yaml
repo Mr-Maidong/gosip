@@ -462,6 +462,43 @@ paths:
       summary: 回放文件时间列表
       tags:
       - records
+  /channels/{id}/start_talk:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 对讲一个通道最多存在一个流
+      parameters:
+      - description: 通道id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/sipapi.Streams'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 通道对讲
+      tags:
+      - streams
   /channels/{id}/streams:
     post:
       consumes:

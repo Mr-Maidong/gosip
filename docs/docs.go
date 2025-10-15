@@ -296,6 +296,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/channels/{id}/start_talk": {
+            "post": {
+                "description": "对讲一个通道最多存在一个流",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "streams"
+                ],
+                "summary": "通道对讲",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "0": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/sipapi.Streams"
+                        }
+                    },
+                    "1000": {
+                        "description": "",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "1001": {
+                        "description": "",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "1002": {
+                        "description": "",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "1003": {
+                        "description": "",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/channels/{id}/streams": {
             "post": {
                 "description": "直播一个通道最多存在一个流，回放每请求一次生成一个流",

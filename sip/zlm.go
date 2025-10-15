@@ -202,3 +202,43 @@ func zlmCloseRtpServer(streamID string) error {
 	logrus.Traceln("zlmCloseRtpServer success", streamID)
 	return nil
 }
+
+// ZLM startSendRtpPassive 请求结构
+type zlmStartSendRtpPassivReq struct {
+	Vhost  string `json:"vhost"`
+	App    string `json:"app"`
+	Stream string `json:"stream"`
+	Ssrc   string `json:"ssrc"`
+}
+
+// ZLM startSendRtpPassive 响应结构
+type zlmStartSendRtpPassivResp struct {
+	Code int `json:"code"`
+	Port int `json:"local_port"`
+}
+
+// zlm 开启 RTP 服务器，指定 streamId
+func zlmStartSendRtpPassive(req zlmStartSendRtpPassivReq) (zlmStartSendRtpPassivResp, error) {
+	res := zlmStartSendRtpPassivResp{}
+
+	params := url.Values{}
+	params.Set("secret", config.Media.Secret)
+	params.Set("vhost", req.Vhost)
+	params.Set("app", req.App)
+	params.Set("stream", req.Stream)
+	params.Set("ssrc", req.Ssrc)
+
+	body, err := utils.GetRequest(config.Media.RESTFUL + "/index/api/startSendRtpPassive?" + params.Encode())
+	if err != nil {
+		logrus.Errorln("zlm startSendRtpPassive fail,", err)
+		return res, err
+	}
+
+	if err = utils.JSONDecode(body, &res); err != nil {
+		logrus.Errorln("zlm startSendRtpPassive decode fail,", err)
+		return res, err
+	}
+
+	logrus.Traceln("startSendRtpPassive success", string(body), req.Stream)
+	return res, nil
+}

@@ -31,6 +31,7 @@ func Init(r *gin.Engine) {
 	{
 		r.GET("/streams", api.StreamsList)
 		r.POST("/channels/:id/streams", api.Play)
+		r.POST("/channels/:id/start_talk", api.StartTalk)
 		r.DELETE("/streams/:id", api.Stop)
 	}
 	// 录像类

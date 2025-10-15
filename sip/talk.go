@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	sdp "github.com/panjjo/gosdp"
@@ -15,8 +14,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// sip 请求播放
-func SipPlay(data *Streams) (*Streams, error) {
+// sip 请求对讲
+func SipTalk(data *Streams) (*Streams, error) {
 
 	channel := Channels{ChannelID: data.ChannelID}
 	if err := db.Get(db.DBClient, &channel); err != nil {
@@ -35,50 +34,41 @@ func SipPlay(data *Streams) (*Streams, error) {
 	data.StreamType = channel.StreamType
 	// 使用通道的播放模式进行处理
 	switch channel.StreamType {
-	case m.StreamTypePull:
-		// 拉流
-
 	default:
-		// 推流模式要求设备在线且活跃
-		// if time.Now().Unix()-channel.Active > 30*60 || channel.Status != m.DeviceStatusON {
-		// 	return nil, errors.New("通道已离线")
-		// }
 		user, ok := _activeDevices.Get(channel.DeviceID)
 		if !ok {
 			return nil, errors.New("设备已离线")
 		}
 		// GB28181推流
-		if data.StreamID == "" {
-			ssrcLock.Lock()
-			data.ssrc = getSSRC(data.T)
-			// data.StreamID = ssrc2stream(data.ssrc)
-			data.StreamID = generateStreamID(data.DeviceID, data.ChannelID)
+		ssrcLock.Lock()
+		data.ssrc = getSSRC(data.T)
+		data.StreamID = ssrc2stream(data.ssrc)
 
-			// 在 ZLM 中开启 RTP 服务器，指定自定义 streamId
-			rtpReq := zlmOpenRtpServerReq{
-				Port:      "0", // 0 表示让 ZLM 自动分配端口
-				StreamID:  data.StreamID,
-				EnableTCP: "1", // 默认开启 TCP
-			}
-
-			rtpResp, err := zlmOpenRtpServer(rtpReq)
-			if err != nil {
-				ssrcLock.Unlock()
-				return nil, fmt.Errorf("开启 ZLM RTP 服务器失败: %v", err)
-			}
-
-			// 更新媒体服务器端口（如果 ZLM 返回了新端口）
-			if rtpResp.Port > 0 {
-				_sysinfo.MediaServerRtpPort = rtpResp.Port
-			}
-
-			// 成功后保存
-			db.Create(db.DBClient, data)
-			ssrcLock.Unlock()
+		// 在 ZLM 中开启 RTP 服务器，指定自定义 streamId
+		rtpReq := zlmStartSendRtpPassivReq{
+			Vhost:  "__defaultVhost__", // 默认虚拟主机
+			App:    "rtp",              // App 名称
+			Stream: "audio",            // 流 ID
+			Ssrc:   "0",                // ssrc
 		}
 
-		var err error
-		data, err = sipPlayPush(data, channel, user)
+		rtpResp, err := zlmStartSendRtpPassive(rtpReq)
+		logrus.Infoln("开启 ZLM RTP 服务器", rtpReq, rtpResp)
+		if err != nil {
+			ssrcLock.Unlock()
+			return nil, fmt.Errorf("开启 ZLM RTP 服务器失败: %v", err)
+		}
+
+		// 更新媒体服务器端口（如果 ZLM 返回了新端口）
+		if rtpResp.Port > 0 {
+			_sysinfo.MediaServerRtpPort = rtpResp.Port
+		}
+
+		// 成功后保存
+		db.Create(db.DBClient, data)
+		ssrcLock.Unlock()
+
+		data, err = sipTalkPush(data, channel, user)
 		if err != nil {
 			return nil, fmt.Errorf("获取视频失败:%v", err)
 		}
@@ -98,35 +88,27 @@ func SipPlay(data *Streams) (*Streams, error) {
 	return data, nil
 }
 
-var ssrcLock *sync.Mutex
-
-func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, error) {
+func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, error) {
 	var (
 		s sdp.Session
 		b []byte
 	)
-	name := "Play"
+	name := "Talk"
 	protocal := "TCP/RTP/AVP"
-	if data.T == 1 {
-		name = "Playback"
-		protocal = "RTP/RTCP"
-	}
 
 	// 视频媒体描述
-	video := sdp.Media{
+	audio := sdp.Media{
 		Description: sdp.MediaDescription{
-			Type:     "video",
-			Port:     _sysinfo.MediaServerRtpPort,
-			Formats:  []string{"96"},
+			Type:    "audio",
+			Port:    _sysinfo.MediaServerRtpPort,
+			Formats: []string{"8"},
+			// Formats:  []string{"8 104"},
 			Protocol: protocal,
 		},
 	}
-	video.AddAttribute("recvonly")
-	if data.T == 0 {
-		video.AddAttribute("setup", "passive")
-		video.AddAttribute("connection", "new")
-	}
-	video.AddAttribute("rtpmap", "96", "PS/90000")
+	audio.AddAttribute("sendonly")
+	audio.AddAttribute("rtpmap", "8", "PCMA/8000")
+	// audio.AddAttribute("rtpmap", "104", "mpeg4-generic/32000")
 
 	// defining message
 	msg := &sdp.Message{
@@ -145,11 +127,8 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 				End:   data.E,
 			},
 		},
-		Medias: []sdp.Media{video}, // 同时包含视频和音频
+		Medias: []sdp.Media{audio}, // 同时包含视频和音频
 		SSRC:   data.ssrc,
-	}
-	if data.T == 1 {
-		msg.URI = fmt.Sprintf("%s:0", channel.ChannelID)
 	}
 
 	// appending message to session
@@ -175,13 +154,13 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 		tx, err = srv.Request(req) // 默认UDP
 	}
 	if err != nil {
-		logrus.Warningln("sipPlayPush fail.id:", device.DeviceID, channel.ChannelID, "err:", err)
+		logrus.Warningln("sipTalkPush fail.id:", device.DeviceID, channel.ChannelID, "err:", err)
 		return data, err
 	}
 	// response
 	response, err := sipResponse(tx)
 	if err != nil {
-		logrus.Warningln("sipPlayPush response fail.id:", device.DeviceID, channel.ChannelID, "err:", err)
+		logrus.Warningln("sipTalkPush response fail.id:", device.DeviceID, channel.ChannelID, "err:", err)
 		return data, err
 	}
 	data.Resp = response
@@ -209,8 +188,8 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 	return data, err
 }
 
-// sip 停止播放
-func SipStopPlay(ssrc string) {
+// sip 停止对讲
+func SipStopTalk(ssrc string) {
 	zlmCloseStream(ssrc)
 	// 关闭 ZLM RTP 服务器
 	if err := zlmCloseRtpServer(ssrc); err != nil {
@@ -221,12 +200,12 @@ func SipStopPlay(ssrc string) {
 	if !ok {
 		return
 	}
-	play := data.(*Streams)
-	logrus.Infoln("SipStopPlay", play.StreamType, m.StreamTypePush)
-	if play.StreamType == m.StreamTypePush {
+	talk := data.(*Streams)
+	logrus.Infoln("SipStopTalk", talk.StreamType, m.StreamTypePush)
+	if talk.StreamType == m.StreamTypePush {
 		// 推流，需要发送关闭请求
-		resp := play.Resp
-		u, ok := _activeDevices.Load(play.DeviceID)
+		resp := talk.Resp
+		u, ok := _activeDevices.Load(talk.DeviceID)
 		if !ok {
 			return
 		}
@@ -242,20 +221,20 @@ func SipStopPlay(ssrc string) {
 			tx, err = srv.Request(req) // 默认UDP
 		}
 		if err != nil {
-			logrus.Warningln("sipStopPlay bye fail.id:", play.DeviceID, play.ChannelID, "err:", err)
+			logrus.Warningln("sipStopPlay bye fail.id:", talk.DeviceID, talk.ChannelID, "err:", err)
 		}
 		_, err = sipResponse(tx)
 		if err != nil {
 			logrus.Warnln("sipStopPlay response fail", err)
-			play.Msg = err.Error()
+			talk.Msg = err.Error()
 		} else {
-			play.Status = 1
-			play.Stop = true
+			talk.Status = 1
+			talk.Stop = true
 		}
-		db.Save(db.DBClient, play)
+		// db.Save(db.DBClient, play)
 	}
-	StreamList.Response.Delete(ssrc)
-	if play.T == 0 {
-		StreamList.Succ.Delete(play.ChannelID)
-	}
+	// StreamList.Response.Delete(ssrc)
+	// if play.T == 0 {
+	// 	StreamList.Succ.Delete(play.ChannelID)
+	// }
 }
