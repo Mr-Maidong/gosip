@@ -1,0 +1,72 @@
+@import './variables.less';
+
+// 全局样式重置
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: @font-size-base;
+  color: @text-color-primary;
+  background-color: @bg-color-layout;
+}
+
+// 滚动条样式
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+// 工具类
+.text-primary {
+  color: @primary-color;
+}
+
+.text-success {
+  color: @success-color;
+}
+
+.text-warning {
+  color: @warning-color;
+}
+
+.text-error {
+  color: @error-color;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+// 通用容器
+.page-container {
+  padding: @spacing-md;
+  background: @bg-color-base;
+  border-radius: @border-radius-base;
+}

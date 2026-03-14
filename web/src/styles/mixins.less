@@ -1,0 +1,74 @@
+@import './variables.less';
+
+// Flex 布局 Mixin
+.flex-center() {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-between() {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex-column() {
+  display: flex;
+  flex-direction: column;
+}
+
+// 文本省略 Mixin
+.text-ellipsis() {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-ellipsis-multi(@line: 2) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: @line;
+  overflow: hidden;
+}
+
+// 清除浮动 Mixin
+.clearfix() {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+// 绝对定位居中 Mixin
+.absolute-center() {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// 尺寸 Mixin
+.size(@width, @height: @width) {
+  width: @width;
+  height: @height;
+}
+
+.square(@size) {
+  .size(@size);
+}
+
+// 圆角 Mixin
+.border-radius(@radius: @border-radius-base) {
+  border-radius: @radius;
+}
+
+// 阴影 Mixin
+.shadow() {
+  box-shadow: @shadow-base;
+}
+
+.shadow-lg() {
+  box-shadow: @shadow-lg;
+}

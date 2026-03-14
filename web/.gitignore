@@ -1,0 +1,15 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+coverage
+*.log
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+public/vite.svg
