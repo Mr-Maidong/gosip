@@ -42,4 +42,9 @@ func Init(r *gin.Engine) {
 	{
 		r.POST("/zlm/webhook/:method", api.ZLMWebHook)
 	}
+	// ZLM 流媒体服务器状态接口
+	{
+		r.POST("/api/stream/keepalive", api.ZLMStreamKeepalive)
+		r.GET("/api/media/status", api.MediaServerStatus)
+	}
 }

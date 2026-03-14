@@ -95,7 +95,7 @@ func LoadConfig() {
 	if err != nil {
 		logrus.Fatalln("init config error:", err)
 	}
-	logrus.Infoln("init config ok")
+	Gb28181Logger.Infoln("init config ok")
 	MConfig = &Config{}
 	err = viper.Unmarshal(&MConfig)
 	if err != nil {

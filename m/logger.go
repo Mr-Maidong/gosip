@@ -3,11 +3,33 @@ package m
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
+
+var Gb28181Logger *logrus.Logger
+
+func init() {
+	logFile, err := os.OpenFile("logs/gb28181.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		panic("无法打开日志文件: " + err.Error())
+	}
+	Gb28181Logger = logrus.New()
+	Gb28181Logger.Out = logFile
+	Gb28181Logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02T15:04:05-07:00",
+		DisableColors:   true,
+	})
+}
+
+// LogSIPMessage 格式化打印SIP消息
+func LogSIPMessage(level logrus.Level, prefix string, message string) {
+	Gb28181Logger.Log(level, fmt.Sprintf("%s message: \n%s", prefix, message))
+}
 
 // CustomFormatter 自定义日志格式化器
 type CustomFormatter struct {

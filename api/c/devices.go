@@ -433,22 +433,3 @@ func DevicesPTZControl(c *gin.Context) {
 // 		logrus.Errorln("send response api fail.", err)
 // 	}
 // }
-
-// func restfulAPI() {
-// 	router := httprouter.New()
-// 	router.GET("/users", apiAuthCheck(apiNewUsers, config.Secret))                // 注册新用户设备
-// 	router.GET("/users/:id/update", apiAuthCheck(apiUpdateUsers, config.Secret))  // 更新用户设备
-// 	router.GET("/users/:id/delete", apiAuthCheck(apiDelUsers, config.Secret))     // 更新用户设备
-// 	router.GET("/users/:id/devices", apiAuthCheck(apiNewDevices, config.Secret))  // 注册新通道设备
-// 	router.GET("/devices/:id/delete", apiAuthCheck(apiDelDevices, config.Secret)) // 删除
-// 	router.GET("/devices/:id/play", apiAuthCheck(apiPlay, config.Secret))         // 播放
-// 	router.GET("/devices/:id/replay", apiAuthCheck(apiReplay, config.Secret))     // 回播
-// 	router.GET("/play/:id/stop", apiAuthCheck(apiStopPlay, config.Secret))        // 停止播放
-// 	router.GET("/devices/:id/files", apiAuthCheck(apiFileList, config.Secret))    // 获取历史文件
-// 	router.GET("/play/:id/record", apiAuthCheck(apiRecordStart, config.Secret))   // 录制
-// 	router.GET("/record/:id/stop", apiAuthCheck(apiRecordStop, config.Secret))    // 停止录制
-// 	router.GET("/addproxy", apiAuthCheck(apiAddProxy, config.Secret))             // 增加拉流代理
-// 	router.GET("/delproxy", apiAuthCheck(apiDelProxy, config.Secret))             // 增加拉流代理
-// 	router.POST("/index/hook/:method", apiWebHooks)
-// 	logrus.Fatal(http.ListenAndServe(config.API, router))
-// }

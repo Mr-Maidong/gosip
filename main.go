@@ -61,7 +61,6 @@ func main() {
 	api.Init(r)
 
 	logrus.Fatal(r.Run(m.MConfig.API))
-	// restapi.RestfulAPI()
 }
 
 func init() {

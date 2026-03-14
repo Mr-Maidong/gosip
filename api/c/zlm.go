@@ -253,3 +253,74 @@ func zlmStreamNoneReader(c *gin.Context) {
 	})
 	logrus.Infoln("closeStream on_stream_none_reader", req.Stream)
 }
+
+// ZLMStreamKeepaliveData ZLM 心跳请求数据
+type ZLMStreamKeepaliveData struct {
+	MediaServerId string `json:"mediaServerId"` // 服务器 ID
+}
+
+// ZLMStreamKeepalive ZLM 流媒体服务器心跳接口
+// @Summary     ZLM 流媒体服务器心跳
+// @Description ZLM 定期调用此接口保持心跳，更新服务器状态
+// @Tags        zlm
+// @Accept      json
+// @Produce     json
+// @Param       body body ZLMStreamKeepaliveData true "心跳数据"
+// @Success     0    {object} map[string]any
+// @Router      /api/stream/keepalive [post]
+func ZLMStreamKeepalive(c *gin.Context) {
+	body := c.Request.Body
+	defer body.Close()
+	data, err := io.ReadAll(body)
+	if err != nil {
+		c.JSON(http.StatusOK, map[string]any{
+			"code": -1,
+			"msg":  "body error",
+		})
+		return
+	}
+	req := &ZLMStreamKeepaliveData{}
+	if err := utils.JSONDecode(data, &req); err != nil {
+		c.JSON(http.StatusOK, map[string]any{
+			"code": -1,
+			"msg":  "body error",
+		})
+		return
+	}
+	// 更新媒体服务器状态为在线
+	m.MConfig.GB28181.MediaServer = true
+	logrus.Debugln("ZLM keepalive received, mediaServerId:", req.MediaServerId)
+	c.JSON(http.StatusOK, map[string]any{
+		"code": 0,
+		"msg":  "success",
+	})
+}
+
+// MediaServerStatusResponse 媒体服务器状态响应
+type MediaServerStatusResponse struct {
+	MediaServer   bool   `json:"mediaServer"`   // 媒体服务器是否在线
+	MediaServerId string `json:"mediaServerId"` // 服务器 ID
+	Region        string `json:"region"`        // 系统域
+	LID           string `json:"lid"`           // 系统 ID
+}
+
+// MediaServerStatus 获取媒体服务器状态接口
+// @Summary     获取媒体服务器状态
+// @Description 获取 ZLM 媒体服务器的在线状态和配置信息
+// @Tags        media
+// @Produce     json
+// @Success     0 {object} MediaServerStatusResponse
+// @Router      /api/media/status [get]
+func MediaServerStatus(c *gin.Context) {
+	status := &MediaServerStatusResponse{
+		MediaServer:   m.MConfig.GB28181.MediaServer,
+		MediaServerId: "",
+		Region:        m.MConfig.GB28181.Region,
+		LID:           m.MConfig.GB28181.LID,
+	}
+	c.JSON(http.StatusOK, map[string]any{
+		"code": 0,
+		"msg":  "success",
+		"data": status,
+	})
+}
