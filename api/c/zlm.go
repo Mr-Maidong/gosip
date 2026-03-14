@@ -254,6 +254,9 @@ func zlmStreamNoneReader(c *gin.Context) {
 	logrus.Infoln("closeStream on_stream_none_reader", req.Stream)
 }
 
+// _zlmMediaServerId 保存 ZLM 上报的 MediaServerId
+var _zlmMediaServerId string
+
 // ZLMStreamKeepaliveData ZLM 心跳请求数据
 type ZLMStreamKeepaliveData struct {
 	MediaServerId string `json:"mediaServerId"` // 服务器 ID
@@ -287,6 +290,8 @@ func ZLMStreamKeepalive(c *gin.Context) {
 		})
 		return
 	}
+	// 保存 MediaServerId
+	_zlmMediaServerId = req.MediaServerId
 	// 更新媒体服务器状态为在线
 	m.MConfig.GB28181.MediaServer = true
 	logrus.Debugln("ZLM keepalive received, mediaServerId:", req.MediaServerId)
@@ -314,7 +319,7 @@ type MediaServerStatusResponse struct {
 func MediaServerStatus(c *gin.Context) {
 	status := &MediaServerStatusResponse{
 		MediaServer:   m.MConfig.GB28181.MediaServer,
-		MediaServerId: "",
+		MediaServerId: _zlmMediaServerId,
 		Region:        m.MConfig.GB28181.Region,
 		LID:           m.MConfig.GB28181.LID,
 	}
