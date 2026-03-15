@@ -22,6 +22,7 @@ func Start() {
 	db.DBClient.AutoMigrate(new(Streams))
 	db.DBClient.AutoMigrate(new(m.SysInfo))
 	db.DBClient.AutoMigrate(new(Files))
+	db.DBClient.AutoMigrate(new(User))
 
 	LoadSYSInfo()
 

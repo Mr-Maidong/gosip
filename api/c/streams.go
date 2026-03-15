@@ -25,7 +25,7 @@ import (
 // @Failure     1001 {object} string
 // @Failure     1002 {object} string
 // @Failure     1003 {object} string
-// @Router      /channels/{id}/streams [post]
+// @Router      /api/v1/channels/{id}/streams [post]
 func Play(c *gin.Context) {
 	channelid := c.Param("id")
 	pm := &sipapi.Streams{S: time.Time{}, E: time.Time{}, ChannelID: channelid, Ttag: db.M{}, Ftag: db.M{}}
@@ -70,7 +70,7 @@ func Play(c *gin.Context) {
 // @Failure     1001   {object} string
 // @Failure     1002   {object} string
 // @Failure     1003   {object} string
-// @Router      /streams/{id} [delete]
+// @Router      /api/v1/streams/{id} [delete]
 func Stop(c *gin.Context) {
 	streamid := c.Param("id")
 	if _, ok := sipapi.StreamList.Response.Load(streamid); !ok {
@@ -101,7 +101,7 @@ type StreamsListResponse struct {
 // @Failure     1001    {object} string
 // @Failure     1002    {object} string
 // @Failure     1003    {object} string
-// @Router      /streams [get]
+// @Router      /api/v1/streams [get]
 func StreamsList(c *gin.Context) {
 	limit := m.GetLimit(c)
 	skip := m.GetSkip(c)

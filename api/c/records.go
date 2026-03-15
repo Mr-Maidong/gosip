@@ -23,7 +23,7 @@ import (
 // @Failure     1001  {object} string
 // @Failure     1002  {object} string
 // @Failure     1003  {object} string
-// @Router      /channels/{id}/records [get]
+// @Router      /api/v1/channels/{id}/records [get]
 func RecordsList(c *gin.Context) {
 	channelid := c.Param("id")
 	start := c.Query("start")

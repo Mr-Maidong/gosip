@@ -20,7 +20,7 @@ import (
 // @Failure     1001 {object} string
 // @Failure     1002 {object} string
 // @Failure     1003 {object} string
-// @Router      /channels/{id}/start_talk [post]
+// @Router      /api/v1/channels/{id}/start_talk [post]
 func StartTalk(c *gin.Context) {
 	channelid := c.Param("id")
 	pm := &sipapi.Streams{S: time.Time{}, E: time.Time{}, ChannelID: channelid, Ttag: db.M{}, Ftag: db.M{}}

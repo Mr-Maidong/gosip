@@ -7,6 +7,7 @@ definitions:
           $ref: '#/definitions/sipapi.Channels'
         type: array
       total:
+        format: int64
         type: integer
     type: object
   api.DevicesListResponse:
@@ -16,7 +17,38 @@ definitions:
           $ref: '#/definitions/sipapi.Devices'
         type: array
       total:
+        format: int64
         type: integer
+    type: object
+  api.HealthResponse:
+    properties:
+      mode:
+        description: 运行模式：debug/release
+        type: string
+      status:
+        description: 状态：healthy/unhealthy
+        type: string
+      timestamp:
+        description: 时间戳
+        type: integer
+      version:
+        description: 版本号
+        type: string
+    type: object
+  api.MediaServerStatusResponse:
+    properties:
+      lid:
+        description: 系统 ID
+        type: string
+      mediaServer:
+        description: 媒体服务器是否在线
+        type: boolean
+      mediaServerId:
+        description: 服务器 ID
+        type: string
+      region:
+        description: 系统域
+        type: string
     type: object
   api.StreamsListResponse:
     properties:
@@ -25,7 +57,24 @@ definitions:
           $ref: '#/definitions/sipapi.Streams'
         type: array
       total:
+        format: int64
         type: integer
+    type: object
+  api.UsersListResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/sipapi.User'
+        type: array
+      total:
+        format: int64
+        type: integer
+    type: object
+  api.ZLMStreamKeepaliveData:
+    properties:
+      mediaServerId:
+        description: 服务器 ID
+        type: string
     type: object
   m.SysInfo:
     properties:
@@ -268,6 +317,39 @@ definitions:
         description: flv 播放地址
         type: string
     type: object
+  sipapi.User:
+    properties:
+      addtime:
+        type: integer
+      email:
+        description: Email 邮箱
+        type: string
+      id:
+        type: integer
+      lastLoginIP:
+        description: LastLoginIP 最后登录 IP
+        type: string
+      lastLoginTime:
+        description: LastLoginTime 最后登录时间
+        type: integer
+      name:
+        description: Name 姓名
+        type: string
+      phone:
+        description: Phone 手机号
+        type: string
+      role:
+        description: Role 角色：admin-管理员，operator-操作员，viewer-观察者
+        type: string
+      status:
+        description: Status 状态：0-禁用，1-启用
+        type: integer
+      uptime:
+        type: integer
+      username:
+        description: Username 用户名（唯一）
+        type: string
+    type: object
 host: localhost:8090
 info:
   contact:
@@ -282,7 +364,7 @@ info:
   title: GoSIP
   version: "2.0"
 paths:
-  /channels:
+  /api/v1/channels:
     get:
       consumes:
       - application/x-www-form-urlencoded
@@ -330,7 +412,7 @@ paths:
       summary: 通道列表接口
       tags:
       - channels
-  /channels/{id}:
+  /api/v1/channels/{id}:
     delete:
       consumes:
       - application/x-www-form-urlencoded
@@ -415,7 +497,7 @@ paths:
       summary: 通道修改接口
       tags:
       - channels
-  /channels/{id}/records:
+  /api/v1/channels/{id}/records:
     get:
       consumes:
       - application/x-www-form-urlencoded
@@ -462,7 +544,7 @@ paths:
       summary: 回放文件时间列表
       tags:
       - records
-  /channels/{id}/start_talk:
+  /api/v1/channels/{id}/start_talk:
     post:
       consumes:
       - application/x-www-form-urlencoded
@@ -499,7 +581,7 @@ paths:
       summary: 通道对讲
       tags:
       - streams
-  /channels/{id}/streams:
+  /api/v1/channels/{id}/streams:
     post:
       consumes:
       - application/x-www-form-urlencoded
@@ -548,7 +630,7 @@ paths:
       summary: 监控播放（直播/回放）
       tags:
       - streams
-  /devices:
+  /api/v1/devices:
     get:
       consumes:
       - application/x-www-form-urlencoded
@@ -596,7 +678,7 @@ paths:
       summary: 设备列表接口
       tags:
       - devices
-  /devices/{id}:
+  /api/v1/devices/{id}:
     delete:
       consumes:
       - application/x-www-form-urlencoded
@@ -677,7 +759,7 @@ paths:
       summary: 设备修改接口
       tags:
       - devices
-  /devices/{id}/channels:
+  /api/v1/devices/{id}/channels:
     post:
       consumes:
       - application/x-www-form-urlencoded
@@ -726,7 +808,7 @@ paths:
       summary: 通道新增接口
       tags:
       - channels
-  /devices/{id}/channels_sync:
+  /api/v1/devices/{id}/channels_sync:
     post:
       consumes:
       - application/x-www-form-urlencoded
@@ -763,7 +845,7 @@ paths:
       summary: 设备通道同步接口
       tags:
       - channels
-  /devices/create:
+  /api/v1/devices/create:
     post:
       consumes:
       - application/x-www-form-urlencoded
@@ -809,7 +891,7 @@ paths:
       summary: 设备新增接口
       tags:
       - devices
-  /devices/ptz:
+  /api/v1/devices/ptz:
     post:
       consumes:
       - application/x-www-form-urlencoded
@@ -843,7 +925,56 @@ paths:
       summary: 设备PTZ云台控制
       tags:
       - devices
-  /streams:
+  /api/v1/health:
+    get:
+      description: 用于服务健康探测，检查服务是否正常运行
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.HealthResponse'
+      summary: 健康检查接口
+      tags:
+      - health
+  /api/v1/media/status:
+    get:
+      description: 获取 ZLM 媒体服务器的在线状态和配置信息
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.MediaServerStatusResponse'
+      summary: 获取媒体服务器状态
+      tags:
+      - media
+  /api/v1/stream/keepalive:
+    post:
+      consumes:
+      - application/json
+      description: ZLM 定期调用此接口保持心跳，更新服务器状态
+      parameters:
+      - description: 心跳数据
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.ZLMStreamKeepaliveData'
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            additionalProperties: true
+            type: object
+      summary: ZLM 流媒体服务器心跳
+      tags:
+      - zlm
+  /api/v1/streams:
     get:
       consumes:
       - application/x-www-form-urlencoded
@@ -891,7 +1022,7 @@ paths:
       summary: 视频流列表接口
       tags:
       - streams
-  /streams/{id}:
+  /api/v1/streams/{id}:
     delete:
       consumes:
       - application/x-www-form-urlencoded
@@ -928,6 +1059,322 @@ paths:
       summary: 停止播放（直播/回放）
       tags:
       - streams
+  /api/v1/users:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取用户列表，支持分页和筛选
+      parameters:
+      - description: 条数 (0-100) 默认 20
+        in: query
+        name: limit
+        type: integer
+      - description: 间隔 默认 0
+        in: query
+        name: skip
+        type: integer
+      - description: 排序，例:-key，根据 key 倒序，key，根据 key 正序
+        in: query
+        name: sort
+        type: string
+      - description: 查询条件，使用规则详情请看帮助
+        in: query
+        name: filters
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.UsersListResponse'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 用户列表接口
+      tags:
+      - users
+  /api/v1/users/{id}:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 删除用户
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 用户删除接口
+      tags:
+      - users
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 修改用户信息
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 姓名
+        in: formData
+        name: name
+        type: string
+      - description: 邮箱
+        in: formData
+        name: email
+        type: string
+      - description: 手机号
+        in: formData
+        name: phone
+        type: string
+      - description: 角色：admin-管理员，operator-操作员，viewer-观察者
+        in: formData
+        name: role
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/sipapi.User'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 用户修改接口
+      tags:
+      - users
+  /api/v1/users/{id}/disable:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 禁用用户
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 用户禁用接口
+      tags:
+      - users
+  /api/v1/users/{id}/enable:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 启用用户
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 用户启用接口
+      tags:
+      - users
+  /api/v1/users/{id}/password:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 修改用户密码
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 旧密码
+        in: formData
+        name: oldPassword
+        required: true
+        type: string
+      - description: 新密码
+        in: formData
+        name: newPassword
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 修改密码接口
+      tags:
+      - users
+  /api/v1/users/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 新增一个用户
+      parameters:
+      - description: 用户名
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: 密码
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: 姓名
+        in: formData
+        name: name
+        type: string
+      - description: 邮箱
+        in: formData
+        name: email
+        type: string
+      - description: 手机号
+        in: formData
+        name: phone
+        type: string
+      - description: 角色：admin-管理员，operator-操作员，viewer-观察者
+        in: formData
+        name: role
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/sipapi.User'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+        "1003":
+          description: ""
+          schema:
+            type: string
+      summary: 用户新增接口
+      tags:
+      - users
 securityDefinitions:
   BasicAuth:
     type: basic

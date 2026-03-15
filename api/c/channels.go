@@ -21,7 +21,7 @@ import (
 // @Failure     1001 {object} string
 // @Failure     1002 {object} string
 // @Failure     1003 {object} string
-// @Router      /devices/{id}/channels_sync [post]
+// @Router      /api/v1/devices/{id}/channels_sync [post]
 func DeviceChannelsSync(c *gin.Context) {
 	deviceid := c.Param("id")
 
@@ -71,7 +71,7 @@ func DeviceChannelsSync(c *gin.Context) {
 // @Failure     1001    {object} string
 // @Failure     1002    {object} string
 // @Failure     1003    {object} string
-// @Router      /devices/{id}/channels [post]
+// @Router      /api/v1/devices/{id}/channels [post]
 func ChannelCreate(c *gin.Context) {
 
 	id := c.Param("id")
@@ -135,7 +135,7 @@ func ChannelCreate(c *gin.Context) {
 // @Failure     1001       {object} string
 // @Failure     1002       {object} string
 // @Failure     1003       {object} string
-// @Router      /channels/{id} [post]
+// @Router      /api/v1/channels/{id} [post]
 func ChannelsUpdate(c *gin.Context) {
 	channelid := c.Param("id")
 
@@ -193,7 +193,7 @@ type ChannelsListResponse struct {
 // @Failure     1001       {object} string
 // @Failure     1002       {object} string
 // @Failure     1003       {object} string
-// @Router      /channels [get]
+// @Router      /api/v1/channels [get]
 func ChannelsList(c *gin.Context) {
 	limit := m.GetLimit(c)
 	skip := m.GetSkip(c)
@@ -221,7 +221,7 @@ func ChannelsList(c *gin.Context) {
 // @Failure     1001 {object} string
 // @Failure     1002 {object} string
 // @Failure     1003 {object} string
-// @Router      /channels/{id} [delete]
+// @Router      /api/v1/channels/{id} [delete]
 func ChannelsDelete(c *gin.Context) {
 	channelid := c.Param("id")
 

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -239,4 +241,63 @@ func Utf8ToGbk(s []byte) ([]byte, error) {
 		return nil, e
 	}
 	return d, nil
+}
+
+// ==================== 密码加密工具 ====================
+
+// EncryptPassword 密码加密（SHA256 + MD5 + Salt）
+func EncryptPassword(password string) string {
+	// 生成随机盐
+	salt := RandString(16)
+	// SHA256 哈希
+	hash := sha256.New()
+	hash.Write([]byte(password))
+	sha256Hash := hex.EncodeToString(hash.Sum(nil))
+	// MD5 哈希
+	md5Hash := GetMD5(sha256Hash)
+	// 组合：salt$hash
+	return fmt.Sprintf("%s$%s", salt, md5Hash)
+}
+
+// VerifyPassword 验证密码
+func VerifyPassword(password string, encrypted string) bool {
+	// 分离盐和哈希
+	// 格式：salt$hash
+	if len(encrypted) < 33 {
+		return false
+	}
+	parts := splitPassword(encrypted)
+	if len(parts) != 2 {
+		return false
+	}
+	// salt := parts[0] // 盐用于未来扩展，当前版本暂不使用
+	storedHash := parts[1]
+
+	// 使用相同的盐进行哈希
+	hash := sha256.New()
+	hash.Write([]byte(password))
+	sha256Hash := hex.EncodeToString(hash.Sum(nil))
+	md5Hash := GetMD5(sha256Hash)
+
+	return md5Hash == storedHash
+}
+
+// splitPassword 分割密码字符串
+func splitPassword(encrypted string) []string {
+	for i := 0; i < len(encrypted); i++ {
+		if encrypted[i] == '$' {
+			return []string{encrypted[:i], encrypted[i+1:]}
+		}
+	}
+	return nil
+}
+
+// ChangePassword 修改密码（返回新的加密密码）
+func ChangePassword(oldPassword string, oldEncrypted string, newPassword string) (string, bool) {
+	// 验证旧密码
+	if !VerifyPassword(oldPassword, oldEncrypted) {
+		return "", false
+	}
+	// 返回新密码的加密结果
+	return EncryptPassword(newPassword), true
 }

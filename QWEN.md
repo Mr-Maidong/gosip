@@ -27,6 +27,7 @@
 - ✅ 异步通知（Webhook）
 - ✅ 语音对讲
 - ✅ PTZ 控制
+- ✅ 用户管理（新增/编辑/删除/启用/禁用/密码修改）
 
 ### 项目结构
 
@@ -45,6 +46,7 @@ gosip/
 │   │   ├── records.go   # 录像接口
 │   │   ├── streams.go   # 流管理接口
 │   │   ├── talk.go      # 语音对讲接口
+│   │   ├── users.go     # 用户管理接口
 │   │   └── zlm.go       # ZLMediaKit Webhook 接口
 │   └── middleware/      # 中间件
 │       ├── auth.go      # 认证中间件
@@ -58,6 +60,8 @@ gosip/
 │   ├── stream.go        # 流管理
 │   ├── talk.go          # 语音对讲处理
 │   ├── zlm.go           # ZLMediaKit 集成
+│   ├── user.go          # 用户模型
+│   ├── user_auth.go     # 用户认证（密码加密）
 │   ├── keepalive.go     # 心跳处理
 │   ├── notify.go        # 通知处理
 │   ├── files.go         # 文件处理
@@ -153,21 +157,28 @@ gb28181:
 
 | 类别 | 端点 | 方法 | 描述 |
 |------|------|------|------|
-| 设备 | `/devices` | GET | 设备列表 |
-| 设备 | `/devices/create` | POST | 创建设备 |
-| 设备 | `/devices/:id` | POST/DELETE | 更新/删除设备 |
-| 设备 | `/devices/ptz` | POST | PTZ 控制 |
-| 通道 | `/channels` | GET | 通道列表 |
-| 通道 | `/devices/:id/channels` | POST | 创建通道 |
-| 通道 | `/devices/:id/channels_sync` | POST | 通道同步 |
-| 流 | `/streams` | GET | 流列表 |
-| 流 | `/channels/:id/streams` | POST | 开始播放 |
-| 流 | `/streams/:id` | DELETE | 停止播放 |
-| 语音 | `/channels/:id/start_talk` | POST | 开始语音对讲 |
-| 录像 | `/channels/:id/records` | GET | 录像列表 |
+| 设备 | `/api/v1/devices` | GET | 设备列表 |
+| 设备 | `/api/v1/devices/create` | POST | 创建设备 |
+| 设备 | `/api/v1/devices/:id` | POST/DELETE | 更新/删除设备 |
+| 设备 | `/api/v1/devices/ptz` | POST | PTZ 控制 |
+| 通道 | `/api/v1/channels` | GET | 通道列表 |
+| 通道 | `/api/v1/devices/:id/channels` | POST | 创建通道 |
+| 通道 | `/api/v1/devices/:id/channels_sync` | POST | 通道同步 |
+| 通道 | `/api/v1/channels/:id` | POST/DELETE | 更新/删除通道 |
+| 流 | `/api/v1/streams` | GET | 流列表 |
+| 流 | `/api/v1/channels/:id/streams` | POST | 开始播放 |
+| 流 | `/api/v1/streams/:id` | DELETE | 停止播放 |
+| 语音 | `/api/v1/channels/:id/start_talk` | POST | 开始语音对讲 |
+| 录像 | `/api/v1/channels/:id/records` | GET | 录像列表 |
 | ZLM | `/zlm/webhook/:method` | POST | ZLMediaKit Webhook |
 | ZLM | `/api/stream/keepalive` | POST | ZLM 心跳接口 |
-| 媒体 | `/api/media/status` | GET | 获取媒体服务器状态 |
+| ZLM | `/api/v1/media/status` | GET | 获取媒体服务器状态 |
+| 用户 | `/api/v1/users` | GET | 用户列表 |
+| 用户 | `/api/v1/users/create` | POST | 创建用户 |
+| 用户 | `/api/v1/users/:id` | POST/DELETE | 更新/删除用户 |
+| 用户 | `/api/v1/users/:id/enable` | POST | 启用用户 |
+| 用户 | `/api/v1/users/:id/disable` | POST | 禁用用户 |
+| 用户 | `/api/v1/users/:id/password` | POST | 修改密码 |
 
 ## 开发规范
 

@@ -25,7 +25,7 @@ import (
 // @Failure     1001 {object} string
 // @Failure     1002 {object} string
 // @Failure     1003 {object} string
-// @Router      /devices/create [post]
+// @Router      /api/v1/devices/create [post]
 func DevicesCreate(c *gin.Context) {
 	pwd := c.PostForm("pwd")
 	if pwd == "" {
@@ -85,7 +85,7 @@ func DevicesCreate(c *gin.Context) {
 // @Failure     1001 {object} string
 // @Failure     1002 {object} string
 // @Failure     1003 {object} string
-// @Router      /devices/{id} [post]
+// @Router      /api/v1/devices/{id} [post]
 func DevicesUpdate(c *gin.Context) {
 	deviceid := c.Param("id")
 
@@ -135,7 +135,7 @@ type DevicesListResponse struct {
 // @Failure     1001    {object} string
 // @Failure     1002    {object} string
 // @Failure     1003    {object} string
-// @Router      /devices [get]
+// @Router      /api/v1/devices [get]
 func DevicesList(c *gin.Context) {
 	limit := m.GetLimit(c)
 	skip := m.GetSkip(c)
@@ -163,7 +163,7 @@ func DevicesList(c *gin.Context) {
 // @Failure     1001 {object} string
 // @Failure     1002 {object} string
 // @Failure     1003 {object} string
-// @Router      /devices/{id} [delete]
+// @Router      /api/v1/devices/{id} [delete]
 func DevicesDelete(c *gin.Context) {
 	deviceid := c.Param("id")
 
@@ -310,7 +310,7 @@ func ParsePTZCmd(ptzType PTZControlType, paramValue int) string {
 // @Param       speed     formData int    false  "速度(1-255)"
 // @Success     0    {object} string
 // @Failure     1000 {object} string
-// @Router      /devices/ptz [post]
+// @Router      /api/v1/devices/ptz [post]
 func DevicesPTZControl(c *gin.Context) {
 	deviceId := c.PostForm("device_id")
 	ptzType := c.PostForm("ptz_type")
