@@ -19,7 +19,7 @@ func PermissionAuth() gin.HandlerFunc {
 			username := c.GetString("username")
 			if username == "" {
 				// 跳过权限检查的路径
-				if isWhitePath(c.Request.URL.Path) {
+				if IsWhitePath(c.Request.URL.Path) {
 					c.Next()
 					return
 				}
@@ -39,7 +39,7 @@ func PermissionAuth() gin.HandlerFunc {
 		method := c.Request.Method
 
 		// 跳过权限检查的路径
-		if isWhitePath(path) {
+		if IsWhitePath(path) {
 			c.Next()
 			return
 		}
@@ -66,11 +66,13 @@ func PermissionAuth() gin.HandlerFunc {
 	}
 }
 
-// isWhitePath 判断是否是白名单路径
-func isWhitePath(path string) bool {
+// IsWhitePath 判断是否是白名单路径（导出供其他包使用）
+func IsWhitePath(path string) bool {
 	whitePaths := []string{
 		"/api/v1/health",
+		"/api/v1/stream/keepalive",
 		"/api/v1/login",
+		"/api/v1/logout",
 		"/zlm/webhook/",
 		"/swagger/",
 	}

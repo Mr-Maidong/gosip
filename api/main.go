@@ -10,8 +10,12 @@ func Init(r *gin.Engine) {
 	// 健康检查接口（无需鉴权）
 	r.GET("/api/v1/health", api.HealthCheck)
 
+	// 登录/登出接口（无需鉴权）
+	r.POST("/api/v1/login", middleware.Login)
+	r.POST("/api/v1/logout", middleware.Logout)
+
 	// 中间件
-	r.Use(middleware.Auth)
+	r.Use(middleware.Auth)        // 认证中间件（验证用户身份）
 	r.Use(middleware.CORS())
 
 	// 设备类接口
@@ -88,3 +92,9 @@ func Init(r *gin.Engine) {
 		r.DELETE("/api/v1/permissions/:id", api.PermissionsDelete)
 	}
 }
+
+// 注意：当前实现使用 Auth 中间件进行身份认证，权限检查通过以下方式实现：
+// 1. 所有接口默认需要登录（通过 Auth 中间件验证 Token）
+// 2. admin 角色默认拥有所有权限（在 service/permission.go 的 InitAdminPermissions 中分配）
+// 3. 如需细粒度权限控制，可在具体 handler 中使用 middleware.RequirePermission("permission:code")
+// 例如：r.GET("/api/v1/devices", middleware.RequirePermission("device:list"), api.DevicesList)

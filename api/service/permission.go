@@ -9,7 +9,14 @@ import (
 // PermissionService 权限服务
 type PermissionService struct{}
 
-// GetRoleByCode 根据编码获取角色
+// GetRoleByCode 根据编码获取角色（包级别函数）
+func GetRoleByCode(code string) (*model.Role, error) {
+	role := &model.Role{}
+	err := db.Get(db.DBClient.Where("code = ?", code), role)
+	return role, err
+}
+
+// GetRoleByCode 根据编码获取角色（方法）
 func (s *PermissionService) GetRoleByCode(code string) (*model.Role, error) {
 	role := &model.Role{}
 	err := db.Get(db.DBClient.Where("code = ?", code), role)

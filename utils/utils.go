@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/text/encoding/simplifiedchinese"
@@ -300,4 +301,51 @@ func ChangePassword(oldPassword string, oldEncrypted string, newPassword string)
 	}
 	// 返回新密码的加密结果
 	return EncryptPassword(newPassword), true
+}
+
+// ==================== JWT 工具 ====================
+
+// jwtSecret JWT 密钥（从环境变量或配置文件读取）
+var jwtSecret = []byte("gosip-secret-key-change-me-in-production")
+
+// SetJWTSecret 设置 JWT 密钥
+func SetJWTSecret(secret string) {
+	jwtSecret = []byte(secret)
+}
+
+// GetTime 获取当前时间戳
+func GetTime() int64 {
+	return time.Now().Unix()
+}
+
+// JWTCreateToken 创建 JWT Token
+func JWTCreateToken(claims map[string]interface{}) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(claims))
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		logrus.Errorln("JWTCreateToken error:", err)
+		return ""
+	}
+	return tokenString
+}
+
+// JWTVerifyToken 验证 JWT Token
+func JWTVerifyToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// 验证签名方法
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return jwtSecret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("invalid token")
 }
