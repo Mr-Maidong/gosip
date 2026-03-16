@@ -50,6 +50,24 @@ definitions:
         description: 系统域
         type: string
     type: object
+  api.PermissionsListResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/model.Permission'
+        type: array
+      total:
+        type: integer
+    type: object
+  api.RolesListResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/model.Role'
+        type: array
+      total:
+        type: integer
+    type: object
   api.StreamsListResponse:
     properties:
       list:
@@ -64,7 +82,7 @@ definitions:
     properties:
       list:
         items:
-          $ref: '#/definitions/sipapi.User'
+          $ref: '#/definitions/model.User'
         type: array
       total:
         format: int64
@@ -104,6 +122,155 @@ definitions:
         type: string
       uptime:
         type: integer
+    type: object
+  model.AssignPermissionsRequest:
+    properties:
+      permissionIds:
+        items:
+          type: integer
+        type: array
+    required:
+    - permissionIds
+    type: object
+  model.AssignRolesRequest:
+    properties:
+      roleIds:
+        items:
+          type: integer
+        type: array
+    required:
+    - roleIds
+    type: object
+  model.CheckPermissionResponse:
+    properties:
+      hasPermission:
+        type: boolean
+    type: object
+  model.Permission:
+    properties:
+      addtime:
+        type: integer
+      code:
+        description: Code 权限编码（唯一标识）
+        type: string
+      description:
+        description: Description 描述
+        type: string
+      id:
+        type: integer
+      method:
+        description: Method HTTP 方法（GET/POST/PUT/DELETE）
+        type: string
+      name:
+        description: Name 权限名称
+        type: string
+      parentId:
+        description: ParentID 父权限 ID
+        type: integer
+      path:
+        description: Path 路径（API 接口路径或前端路由）
+        type: string
+      type:
+        description: Type 权限类型：menu-菜单，button-按钮，api-接口
+        type: string
+      uptime:
+        type: integer
+    type: object
+  model.PermissionTree:
+    properties:
+      addtime:
+        type: integer
+      children:
+        items:
+          $ref: '#/definitions/model.PermissionTree'
+        type: array
+      code:
+        description: Code 权限编码（唯一标识）
+        type: string
+      description:
+        description: Description 描述
+        type: string
+      id:
+        type: integer
+      method:
+        description: Method HTTP 方法（GET/POST/PUT/DELETE）
+        type: string
+      name:
+        description: Name 权限名称
+        type: string
+      parentId:
+        description: ParentID 父权限 ID
+        type: integer
+      path:
+        description: Path 路径（API 接口路径或前端路由）
+        type: string
+      type:
+        description: Type 权限类型：menu-菜单，button-按钮，api-接口
+        type: string
+      uptime:
+        type: integer
+    type: object
+  model.Role:
+    properties:
+      addtime:
+        type: integer
+      code:
+        description: Code 角色编码（唯一标识）
+        type: string
+      description:
+        description: Description 描述
+        type: string
+      id:
+        type: integer
+      name:
+        description: Name 角色名称
+        type: string
+      sort:
+        description: Sort 排序
+        type: integer
+      status:
+        description: Status 状态：0-禁用，1-启用
+        type: integer
+      uptime:
+        type: integer
+    type: object
+  model.User:
+    properties:
+      addtime:
+        type: integer
+      email:
+        description: Email 邮箱
+        type: string
+      id:
+        type: integer
+      name:
+        description: Name 姓名
+        type: string
+      phone:
+        description: Phone 手机号
+        type: string
+      role:
+        description: Role 角色（已废弃，使用 UserRole 关联表）
+        type: string
+      status:
+        description: Status 状态：0-禁用，1-启用
+        type: integer
+      uptime:
+        type: integer
+      username:
+        description: Username 用户名
+        type: string
+    type: object
+  model.UserPermissionsResponse:
+    properties:
+      codes:
+        items:
+          type: string
+        type: array
+      permissions:
+        items:
+          $ref: '#/definitions/model.Permission'
+        type: array
     type: object
   sipapi.Channels:
     properties:
@@ -951,6 +1118,543 @@ paths:
       summary: 获取媒体服务器状态
       tags:
       - media
+  /api/v1/permissions:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取权限列表，支持树形结构
+      parameters:
+      - description: 权限类型：menu/button/api
+        in: query
+        name: type
+        type: string
+      - description: 父权限 ID，0 表示根节点
+        in: query
+        name: parentId
+        type: integer
+      - description: 条数 (0-100) 默认 100
+        in: query
+        name: limit
+        type: integer
+      - description: 间隔 默认 0
+        in: query
+        name: skip
+        type: integer
+      - description: 排序
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.PermissionsListResponse'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 权限列表接口
+      tags:
+      - permissions
+  /api/v1/permissions/:id:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 删除权限
+      parameters:
+      - description: 权限 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 删除权限
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 更新权限信息
+      parameters:
+      - description: 权限 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 权限名称
+        in: formData
+        name: name
+        type: string
+      - description: 权限类型
+        in: formData
+        name: type
+        type: string
+      - description: 路径
+        in: formData
+        name: path
+        type: string
+      - description: HTTP 方法
+        in: formData
+        name: method
+        type: string
+      - description: 父权限 ID
+        in: formData
+        name: parentId
+        type: integer
+      - description: 描述
+        in: formData
+        name: description
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/model.Permission'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+      summary: 更新权限
+      tags:
+      - permissions
+  /api/v1/permissions/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 创建一个新的权限
+      parameters:
+      - description: 权限名称
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: 权限编码
+        in: formData
+        name: code
+        required: true
+        type: string
+      - description: 权限类型：menu/button/api
+        in: formData
+        name: type
+        required: true
+        type: string
+      - description: 路径
+        in: formData
+        name: path
+        type: string
+      - description: HTTP 方法
+        in: formData
+        name: method
+        type: string
+      - description: 父权限 ID
+        in: formData
+        name: parentId
+        type: integer
+      - description: 描述
+        in: formData
+        name: description
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/model.Permission'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+      summary: 创建权限
+      tags:
+      - permissions
+  /api/v1/permissions/tree:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取权限树形结构
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            items:
+              $ref: '#/definitions/model.PermissionTree'
+            type: array
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 权限树接口
+      tags:
+      - permissions
+  /api/v1/roles:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取角色列表，支持分页和筛选
+      parameters:
+      - description: 条数 (0-100) 默认 20
+        in: query
+        name: limit
+        type: integer
+      - description: 间隔 默认 0
+        in: query
+        name: skip
+        type: integer
+      - description: 排序，例:-sort 根据 sort 倒序
+        in: query
+        name: sort
+        type: string
+      - description: 查询条件
+        in: query
+        name: filters
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.RolesListResponse'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 角色列表接口
+      tags:
+      - roles
+  /api/v1/roles/:id:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 删除角色
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 删除角色
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 更新角色信息
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 角色名称
+        in: formData
+        name: name
+        type: string
+      - description: 描述
+        in: formData
+        name: description
+        type: string
+      - description: 排序
+        in: formData
+        name: sort
+        type: integer
+      - description: 状态：0-禁用，1-启用
+        in: formData
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/model.Role'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+      summary: 更新角色
+      tags:
+      - roles
+  /api/v1/roles/:id/disable:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 禁用角色
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 禁用角色
+      tags:
+      - roles
+  /api/v1/roles/:id/enable:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 启用角色
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 启用角色
+      tags:
+      - roles
+  /api/v1/roles/:id/permissions:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取角色的所有权限
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            items:
+              $ref: '#/definitions/model.Permission'
+            type: array
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 获取角色的权限列表
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: 给角色分配权限
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 权限 ID 列表
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/model.AssignPermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+      summary: 给角色分配权限
+      tags:
+      - roles
+  /api/v1/roles/:roleId/permissions/:permissionId:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 移除角色的单个权限
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: roleId
+        required: true
+        type: integer
+      - description: 权限 ID
+        in: path
+        name: permissionId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 移除角色权限
+      tags:
+      - permissions
+  /api/v1/roles/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 创建一个新的角色
+      parameters:
+      - description: 角色名称
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: 角色编码
+        in: formData
+        name: code
+        required: true
+        type: string
+      - description: 描述
+        in: formData
+        name: description
+        type: string
+      - description: 排序
+        in: formData
+        name: sort
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/model.Role'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+      summary: 创建角色
+      tags:
+      - roles
   /api/v1/stream/keepalive:
     post:
       consumes:
@@ -1107,6 +1811,172 @@ paths:
       summary: 用户列表接口
       tags:
       - users
+  /api/v1/users/:id/hasPermission:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 检查用户是否有某权限
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 权限编码
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/model.CheckPermissionResponse'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 检查用户权限
+      tags:
+      - roles
+  /api/v1/users/:id/permissions:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取用户的所有权限
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            $ref: '#/definitions/model.UserPermissionsResponse'
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 获取用户权限列表
+      tags:
+      - roles
+  /api/v1/users/:id/roles:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 获取用户的所有角色
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            items:
+              $ref: '#/definitions/model.Role'
+            type: array
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 获取用户的角色列表
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: 给用户分配角色
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 角色 ID 列表
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/model.AssignRolesRequest'
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+        "1002":
+          description: ""
+          schema:
+            type: string
+      summary: 给用户分配角色
+      tags:
+      - roles
+  /api/v1/users/:userId/roles/:roleId:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 移除用户的单个角色
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      - description: 角色 ID
+        in: path
+        name: roleId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: ""
+          schema:
+            type: string
+        "1000":
+          description: ""
+          schema:
+            type: string
+        "1001":
+          description: ""
+          schema:
+            type: string
+      summary: 移除用户角色
+      tags:
+      - roles
   /api/v1/users/{id}:
     delete:
       consumes:

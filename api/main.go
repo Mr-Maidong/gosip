@@ -59,5 +59,32 @@ func Init(r *gin.Engine) {
 		r.POST("/api/v1/users/:id/enable", api.UsersEnable)
 		r.POST("/api/v1/users/:id/disable", api.UsersDisable)
 		r.POST("/api/v1/users/:id/password", api.UsersChangePassword)
+		// 用户角色关联
+		r.GET("/api/v1/users/:id/roles", api.UsersGetRoles)
+		r.POST("/api/v1/users/:id/roles", api.UsersAssignRoles)
+		r.DELETE("/api/v1/users/:id/roles/:roleId", api.UsersRemoveRole)
+		// 用户权限关联
+		r.GET("/api/v1/users/:id/permissions", api.UsersGetPermissions)
+		r.GET("/api/v1/users/:id/hasPermission", api.UsersHasPermission)
+	}
+	// 角色类接口
+	{
+		r.GET("/api/v1/roles", api.RolesList)
+		r.POST("/api/v1/roles/create", api.RolesCreate)
+		r.POST("/api/v1/roles/:id", api.RolesUpdate)
+		r.DELETE("/api/v1/roles/:id", api.RolesDelete)
+		r.POST("/api/v1/roles/:id/enable", api.RolesEnable)
+		r.POST("/api/v1/roles/:id/disable", api.RolesDisable)
+		r.POST("/api/v1/roles/:id/permissions", api.RolesAssignPermissions)
+		r.GET("/api/v1/roles/:id/permissions", api.RolesGetPermissions)
+		r.DELETE("/api/v1/roles/:id/permissions/:permissionId", api.RolesRemovePermission)
+	}
+	// 权限类接口
+	{
+		r.GET("/api/v1/permissions", api.PermissionsList)
+		r.GET("/api/v1/permissions/tree", api.PermissionsTree)
+		r.POST("/api/v1/permissions/create", api.PermissionsCreate)
+		r.POST("/api/v1/permissions/:id", api.PermissionsUpdate)
+		r.DELETE("/api/v1/permissions/:id", api.PermissionsDelete)
 	}
 }

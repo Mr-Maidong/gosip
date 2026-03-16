@@ -9,6 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/panjjo/gosip/api"
 	"github.com/panjjo/gosip/api/middleware"
+	"github.com/panjjo/gosip/api/model"
+	"github.com/panjjo/gosip/api/service"
+	"github.com/panjjo/gosip/db"
 	"github.com/panjjo/gosip/m"
 	sipapi "github.com/panjjo/gosip/sip"
 	"github.com/sirupsen/logrus"
@@ -47,6 +50,19 @@ func main() {
 	}()
 
 	sipapi.Start()
+
+	// 初始化权限系统（数据库表迁移和默认数据）
+	db.DBClient.AutoMigrate(
+		new(model.Role),
+		new(model.Permission),
+		new(model.UserRole),
+		new(model.RolePermission),
+		new(model.User),
+	)
+	permissionService := &service.PermissionService{}
+	if err := permissionService.Init(); err != nil {
+		logrus.Errorln("Init permission system error:", err)
+	}
 
 	// 根据配置设置 Gin 运行模式
 	if strings.ToUpper(m.MConfig.MOD) == "RELEASE" {

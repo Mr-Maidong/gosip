@@ -1,17 +1,19 @@
 package api
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
+	"github.com/panjjo/gosip/api/model"
 	"github.com/panjjo/gosip/db"
 	"github.com/panjjo/gosip/m"
-	sipapi "github.com/panjjo/gosip/sip"
 	"github.com/panjjo/gosip/utils"
 )
 
 // UsersListResponse 用户列表响应
 type UsersListResponse struct {
 	Total int64
-	List  []sipapi.User
+	List  []model.User
 }
 
 // @Summary     用户列表接口
@@ -33,8 +35,8 @@ func UsersList(c *gin.Context) {
 	limit := m.GetLimit(c)
 	skip := m.GetSkip(c)
 	sort := m.GetSort(c)
-	users := []sipapi.User{}
-	total, err := db.FindWithJson(db.DBClient, new(sipapi.User), &users, c.Query("filters"), sort, skip, limit, true)
+	users := []model.User{}
+	total, err := db.FindWithJson(db.DBClient, new(model.User), &users, c.Query("filters"), sort, skip, limit, true)
 	if err != nil {
 		m.JsonResponse(c, m.StatusDBERR, err)
 		return
@@ -75,12 +77,12 @@ func UsersCreate(c *gin.Context) {
 	}
 
 	// 检查用户名是否已存在
-	if err := db.Get(db.DBClient, &sipapi.User{Username: username}); err == nil {
+	if err := db.Get(db.DBClient, &model.User{Username: username}); err == nil {
 		m.JsonResponse(c, m.StatusParamsERR, "用户名已存在")
 		return
 	}
 
-	user := sipapi.User{
+	user := model.User{
 		Username: username,
 		Password: utils.EncryptPassword(password),
 		Name:     c.PostForm("name"),
@@ -129,8 +131,14 @@ func UsersUpdate(c *gin.Context) {
 		return
 	}
 
-	user := &sipapi.User{}
-	if err := db.Get(db.DBClient, user); err != nil {
+	id, err := strconv.Atoi(userid)
+	if err != nil {
+		m.JsonResponse(c, m.StatusParamsERR, "用户 ID 格式错误")
+		return
+	}
+
+	user := &model.User{}
+	if err := db.DBClient.First(user, uint(id)).Error; err != nil {
 		if db.RecordNotFound(err) {
 			m.JsonResponse(c, m.StatusParamsERR, "用户不存在")
 			return
@@ -180,8 +188,14 @@ func UsersDelete(c *gin.Context) {
 		return
 	}
 
-	user := &sipapi.User{}
-	if err := db.Get(db.DBClient, user); err != nil {
+	id, err := strconv.Atoi(userid)
+	if err != nil {
+		m.JsonResponse(c, m.StatusParamsERR, "用户 ID 格式错误")
+		return
+	}
+
+	user := &model.User{}
+	if err := db.DBClient.First(user, uint(id)).Error; err != nil {
 		if db.RecordNotFound(err) {
 			m.JsonResponse(c, m.StatusParamsERR, "用户不存在")
 			return
@@ -217,8 +231,14 @@ func UsersEnable(c *gin.Context) {
 		return
 	}
 
-	user := &sipapi.User{}
-	if err := db.Get(db.DBClient, user); err != nil {
+	id, err := strconv.Atoi(userid)
+	if err != nil {
+		m.JsonResponse(c, m.StatusParamsERR, "用户 ID 格式错误")
+		return
+	}
+
+	user := &model.User{}
+	if err := db.DBClient.First(user, uint(id)).Error; err != nil {
 		if db.RecordNotFound(err) {
 			m.JsonResponse(c, m.StatusParamsERR, "用户不存在")
 			return
@@ -255,8 +275,14 @@ func UsersDisable(c *gin.Context) {
 		return
 	}
 
-	user := &sipapi.User{}
-	if err := db.Get(db.DBClient, user); err != nil {
+	id, err := strconv.Atoi(userid)
+	if err != nil {
+		m.JsonResponse(c, m.StatusParamsERR, "用户 ID 格式错误")
+		return
+	}
+
+	user := &model.User{}
+	if err := db.DBClient.First(user, uint(id)).Error; err != nil {
 		if db.RecordNotFound(err) {
 			m.JsonResponse(c, m.StatusParamsERR, "用户不存在")
 			return
@@ -295,6 +321,22 @@ func UsersChangePassword(c *gin.Context) {
 		return
 	}
 
+	id, err := strconv.Atoi(userid)
+	if err != nil {
+		m.JsonResponse(c, m.StatusParamsERR, "用户 ID 格式错误")
+		return
+	}
+
+	user := &model.User{}
+	if err := db.DBClient.First(user, uint(id)).Error; err != nil {
+		if db.RecordNotFound(err) {
+			m.JsonResponse(c, m.StatusParamsERR, "用户不存在")
+			return
+		}
+		m.JsonResponse(c, m.StatusDBERR, err)
+		return
+	}
+
 	oldPassword := c.PostForm("oldPassword")
 	if oldPassword == "" {
 		m.JsonResponse(c, m.StatusParamsERR, "旧密码不能为空")
@@ -304,16 +346,6 @@ func UsersChangePassword(c *gin.Context) {
 	newPassword := c.PostForm("newPassword")
 	if newPassword == "" {
 		m.JsonResponse(c, m.StatusParamsERR, "新密码不能为空")
-		return
-	}
-
-	user := &sipapi.User{}
-	if err := db.Get(db.DBClient, user); err != nil {
-		if db.RecordNotFound(err) {
-			m.JsonResponse(c, m.StatusParamsERR, "用户不存在")
-			return
-		}
-		m.JsonResponse(c, m.StatusDBERR, err)
 		return
 	}
 

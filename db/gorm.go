@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"time"
@@ -11,6 +12,17 @@ import (
 	//  _ "github.com/jinzhu/gorm/dialects/sqlite"
 	//  _ "github.com/jinzhu/gorm/dialects/mssql"
 )
+
+// NewError 创建数据库错误
+func NewError(err error, msg ...string) error {
+	if err != nil {
+		return errors.New(msg[0] + ": " + err.Error())
+	}
+	if len(msg) > 0 {
+		return errors.New(msg[0])
+	}
+	return nil
+}
 
 type Config struct {
 	Dialect string `json:"dialect" yaml:"dialect"`
