@@ -14,6 +14,7 @@
 | 配置管理 | Viper |
 | 日志 | Logrus |
 | API 文档 | Swagger/OpenAPI |
+| 认证授权 | JWT + RBAC |
 | 媒体服务器 | ZLMediaKit |
 
 ### 主要功能
@@ -28,9 +29,11 @@
 - ✅ 语音对讲
 - ✅ PTZ 控制
 - ✅ 用户管理（新增/编辑/删除/启用/禁用/密码修改）
-- ✅ RBAC 权限管理（用户 - 角色 - 权限三层模型）
-- ✅ 角色管理（默认角色：admin、operator、viewer）
-- ✅ 权限管理（menu/button/api 类型）
+- ✅ **RBAC 权限管理**（用户 - 角色 - 权限三层模型）
+- ✅ **角色管理**（默认角色：admin、operator、viewer）
+- ✅ **权限管理**（menu/button/api 类型）
+- ✅ **JWT 认证**（Token 有效期 7 天）
+- ✅ **登录/登出**接口
 
 ### 项目结构
 
@@ -50,9 +53,16 @@ gosip/
 │   │   ├── streams.go   # 流管理接口
 │   │   ├── talk.go      # 语音对讲接口
 │   │   ├── users.go     # 用户管理接口
+│   │   ├── roles.go     # 角色管理接口 ⭐新增
+│   │   ├── permissions.go # 权限管理接口 ⭐新增
 │   │   └── zlm.go       # ZLMediaKit Webhook 接口
+│   ├── model/           # 数据模型 ⭐新增
+│   │   └── model.go     # RBAC 模型定义
+│   ├── service/         # 服务层 ⭐新增
+│   │   └── permission.go # 权限服务
 │   └── middleware/      # 中间件
-│       ├── auth.go      # 认证中间件
+│       ├── auth.go      # JWT 认证中间件 ⭐新增
+│       ├── permission.go # 权限验证中间件 ⭐新增
 │       ├── cors.go      # CORS 中间件
 │       └── recovery.go  # 异常恢复中间件
 ├── sip/                 # SIP 协议处理层
@@ -80,7 +90,7 @@ gosip/
 │   ├── logger.go        # 日志配置
 │   └── m.go             # 全局变量
 ├── utils/               # 工具函数
-│   ├── utils.go         # 通用工具函数
+│   ├── utils.go         # 通用工具函数（含 JWT、密码加密）
 │   └── logger.go        # 日志工具
 ├── docs/                # Swagger API 文档
 ├── demo/                # 演示/示例配置
@@ -246,12 +256,88 @@ gb28181:
 3. 双向音频传输
 4. 结束后关闭通道
 
+## RBAC 权限管理
+
+### 数据模型
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│    User     │────▶│  UserRole    │◀────│    Role     │
+│   (用户)    │     │ (用户角色关联) │     │   (角色)    │
+└─────────────┘     └──────────────┘     └─────────────┘
+                           │                    │
+                           │                    │
+                           ▼                    ▼
+                    ┌──────────────┐     ┌──────────────┐
+                    │RolePermission│◀────│  Permission  │
+                    │(角色权限关联) │     │   (权限)     │
+                    └──────────────┘     └──────────────┘
+```
+
+### 默认角色
+
+| 角色编码 | 角色名称 | 描述 | 权限 |
+|----------|----------|------|------|
+| admin | 超级管理员 | 系统超级管理员，拥有所有权限 | 全部权限（自动分配） |
+| operator | 操作员 | 系统操作员，拥有操作权限 | 需手动分配 |
+| viewer | 观察者 | 只读权限用户 | 需手动分配 |
+
+### 默认用户
+
+| 用户名 | 密码 | 角色 | 说明 |
+|--------|------|------|------|
+| admin | admin123 | admin | 系统启动时自动创建 |
+
+### 认证流程
+
+```
+1. 用户登录 → POST /api/v1/login
+2. 验证成功 → 返回 JWT Token（有效期 7 天）
+3. 后续请求 → Header 携带 Authorization: Bearer <token>
+4. 服务端验证 → Auth 中间件解析 Token，获取用户信息
+5. 权限检查 → （可选）PermissionAuth 中间件检查权限
+```
+
+### 权限类型
+
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| menu | 菜单权限 | 设备管理、通道管理 |
+| button | 按钮权限 | 创建、编辑、删除 |
+| api | 接口权限 | GET /api/v1/devices |
+
+### 使用示例
+
+```bash
+# 1. 登录获取 Token
+curl -X POST http://localhost:8090/api/v1/login \
+  -d "username=admin" -d "password=admin123"
+
+# 2. 携带 Token 访问接口
+curl -X GET http://localhost:8090/api/v1/devices \
+  -H "Authorization: Bearer <your_token>"
+
+# 3. 无 Token 访问（返回认证错误）
+curl -X GET http://localhost:8090/api/v1/devices
+# 返回：{"code":1004,"msg":"未提供认证信息"}
+```
+
+### 白名单接口（无需认证）
+
+- `/api/v1/health` - 健康检查
+- `/api/v1/login` - 登录
+- `/api/v1/logout` - 登出
+- `/zlm/webhook/*` - ZLMediaKit Webhook
+- `/swagger/*` - Swagger 文档
+
 ## 注意事项
 
 1. **ZLMediaKit 集成**：必须正确配置 ZLMediaKit 的 Webhook 指向本项目的 API 地址
-2. **数据库初始化**：首次启动会自动创建数据库表
+2. **数据库初始化**：首次启动会自动创建数据库表（包括 RBAC 相关表）
 3. **流管理**：直播流 5 分钟无人观看自动关闭，回放流需手动关闭
-4. **接口安全**：所有 API 请求需要通过 `secret` 进行认证
+4. **接口安全**：所有 API 请求需要通过 JWT Token 进行认证
 5. **端口配置**：确保 SIP 端口（UDP/TCP）和 API 端口未被占用
 6. **pprof 调试**：服务启动后会开启 pprof 调试端口（6060）
 7. **ZLM 心跳**：ZLM 需要定期调用 `/api/stream/keepalive` 接口保持心跳，否则媒体服务器状态会显示为离线
+8. **JWT 密钥**：使用 config.yml 中的 `secret` 配置作为 JWT 密钥，生产环境请修改默认值
+9. **默认密码**：首次启动会创建 admin 用户（密码 admin123），建议及时修改

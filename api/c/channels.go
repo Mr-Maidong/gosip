@@ -175,8 +175,8 @@ func ChannelsUpdate(c *gin.Context) {
 }
 
 type ChannelsListResponse struct {
-	Total int64
-	List  []sipapi.Channels
+	Total int64             `json:"total"`
+	List  []sipapi.Channels `json:"list"`
 }
 
 // @Summary     通道列表接口

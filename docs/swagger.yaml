@@ -7,7 +7,6 @@ definitions:
           $ref: '#/definitions/sipapi.Channels'
         type: array
       total:
-        format: int64
         type: integer
     type: object
   api.DevicesListResponse:
@@ -17,7 +16,6 @@ definitions:
           $ref: '#/definitions/sipapi.Devices'
         type: array
       total:
-        format: int64
         type: integer
     type: object
   api.HealthResponse:
@@ -75,7 +73,6 @@ definitions:
           $ref: '#/definitions/sipapi.Streams'
         type: array
       total:
-        format: int64
         type: integer
     type: object
   api.UsersListResponse:
@@ -85,7 +82,6 @@ definitions:
           $ref: '#/definitions/model.User'
         type: array
       total:
-        format: int64
         type: integer
     type: object
   api.ZLMStreamKeepaliveData:
@@ -242,6 +238,12 @@ definitions:
         description: Email 邮箱
         type: string
       id:
+        type: integer
+      last_login_ip:
+        description: LastLoginIP 最后登录 IP
+        type: string
+      last_login_time:
+        description: LastLoginTime 最后登录时间
         type: integer
       name:
         description: Name 姓名
@@ -523,7 +525,7 @@ info:
     email: panjjo@vip.qq.com
     name: GoSIP
     url: https://github.com/panjjo/gosip
-  description: GB28181 SIP服务端.
+  description: GB28181 SIP 服务端.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1105,6 +1107,63 @@ paths:
       summary: 健康检查接口
       tags:
       - health
+  /api/v1/login:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 用户登录获取 JWT Token，Token 有效期 7 天
+      parameters:
+      - description: 用户名
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: 密码
+        in: formData
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: 登录成功，返回 Token 和用户信息
+          schema:
+            additionalProperties: true
+            type: object
+        "1000":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "1001":
+          description: 用户名或密码错误
+          schema:
+            additionalProperties: true
+            type: object
+        "1004":
+          description: 认证错误（用户被禁用）
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 用户登录
+      tags:
+      - auth
+  /api/v1/logout:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: 用户登出，由于使用 JWT，客户端删除 token 即可，服务端无需额外操作
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: 登出成功
+          schema:
+            type: string
+      summary: 用户登出
+      tags:
+      - auth
   /api/v1/media/status:
     get:
       description: 获取 ZLM 媒体服务器的在线状态和配置信息

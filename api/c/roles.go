@@ -12,7 +12,7 @@ import (
 
 // RolesListResponse 角色列表响应
 type RolesListResponse struct {
-	Total int64         `json:"total"`
+	Total int64        `json:"total"`
 	List  []model.Role `json:"list"`
 }
 

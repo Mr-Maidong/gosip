@@ -12,7 +12,7 @@ import (
 
 // PermissionsListResponse 权限列表响应
 type PermissionsListResponse struct {
-	Total int64             `json:"total"`
+	Total int64              `json:"total"`
 	List  []model.Permission `json:"list"`
 }
 

@@ -117,8 +117,8 @@ func DevicesUpdate(c *gin.Context) {
 }
 
 type DevicesListResponse struct {
-	Total int64
-	List  []sipapi.Devices
+	Total int64            `json:"total"`
+	List  []sipapi.Devices `json:"list"`
 }
 
 // @Summary     设备列表接口

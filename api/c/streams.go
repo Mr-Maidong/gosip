@@ -83,8 +83,8 @@ func Stop(c *gin.Context) {
 }
 
 type StreamsListResponse struct {
-	Total int64
-	List  []sipapi.Streams
+	Total int64            `json:"total"`
+	List  []sipapi.Streams `json:"list"`
 }
 
 // @Summary     视频流列表接口

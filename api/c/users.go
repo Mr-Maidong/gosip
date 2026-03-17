@@ -12,8 +12,8 @@ import (
 
 // UsersListResponse 用户列表响应
 type UsersListResponse struct {
-	Total int64
-	List  []model.User
+	Total int64        `json:"total"`
+	List  []model.User `json:"list"`
 }
 
 // @Summary     用户列表接口

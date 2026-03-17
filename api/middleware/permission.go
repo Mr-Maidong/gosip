@@ -86,8 +86,10 @@ func IsWhitePath(path string) bool {
 }
 
 // RequirePermission 需要特定权限的中间件
+// 用户 ID 从 JWT Token 中解析（由 Auth 中间件设置到上下文），无需接口传递 user_id 参数
 func RequirePermission(permissionCode string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 从上下文中获取用户 ID（由 Auth 中间件从 JWT Token 解析后设置）
 		userID, exists := c.Get("user_id")
 		if !exists {
 			m.JsonResponse(c, m.StatusAuthERR, "未登录")

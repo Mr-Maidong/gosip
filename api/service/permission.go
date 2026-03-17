@@ -77,7 +77,7 @@ func (s *PermissionService) GetUserRoles(userID uint) ([]model.Role, error) {
 
 	// 查询角色详情
 	var roles []model.Role
-	if err := db.DBClient.Where("id IN ? AND status = ?", roleIDs, 1).Find(&roles).Error; err != nil {
+	if err := db.DBClient.Where("id IN (?) AND status = 1", roleIDs).Find(&roles).Error; err != nil {
 		return nil, err
 	}
 
@@ -104,7 +104,7 @@ func (s *PermissionService) GetUserPermissions(userID uint) ([]model.Permission,
 
 	// 查询角色权限关联
 	var rolePermissions []model.RolePermission
-	if err := db.DBClient.Where("role_id IN ?", roleIDs).Find(&rolePermissions).Error; err != nil {
+	if err := db.DBClient.Where("role_id IN (?)", roleIDs).Find(&rolePermissions).Error; err != nil {
 		return nil, err
 	}
 
@@ -125,7 +125,7 @@ func (s *PermissionService) GetUserPermissions(userID uint) ([]model.Permission,
 
 	// 查询权限详情
 	var permissions []model.Permission
-	if err := db.DBClient.Where("id IN ?", permissionIDs).Order("sort ASC").Find(&permissions).Error; err != nil {
+	if err := db.DBClient.Where("id IN (?)", permissionIDs).Order("id ASC").Find(&permissions).Error; err != nil {
 		return nil, err
 	}
 

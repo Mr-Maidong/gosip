@@ -166,8 +166,8 @@ project/
        }
        
        m.JsonResponse(c, m.StatusSucc, UsersListResponse{
-           Total: total,
-           List:  users,
+           total: total,
+           list:  users,
        })
    }
    ```

@@ -15,7 +15,7 @@ func Init(r *gin.Engine) {
 	r.POST("/api/v1/logout", middleware.Logout)
 
 	// 中间件
-	r.Use(middleware.Auth)        // 认证中间件（验证用户身份）
+	r.Use(middleware.Auth) // 认证中间件（验证用户身份）
 	r.Use(middleware.CORS())
 
 	// 设备类接口
@@ -56,7 +56,7 @@ func Init(r *gin.Engine) {
 	}
 	// 用户类接口
 	{
-		r.GET("/api/v1/users", api.UsersList)
+		r.GET("/api/v1/users", middleware.RequirePermission("user:list"), api.UsersList)
 		r.POST("/api/v1/users/create", api.UsersCreate)
 		r.POST("/api/v1/users/:id", api.UsersUpdate)
 		r.DELETE("/api/v1/users/:id", api.UsersDelete)

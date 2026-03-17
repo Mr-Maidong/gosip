@@ -108,6 +108,18 @@ func ParseToken(tokenString string) (*TokenClaims, error) {
 }
 
 // Login 登录接口
+// @Summary      用户登录
+// @Description  用户登录获取 JWT Token，Token 有效期 7 天
+// @Tags         auth
+// @Accept       application/x-www-form-urlencoded
+// @Produce      json
+// @Param        username  formData  string  true  "用户名"
+// @Param        password  formData  string  true  "密码"
+// @Success      0  {object}  map[string]interface{}  "登录成功，返回 Token 和用户信息"
+// @Failure      1000  {object}  map[string]interface{}  "参数错误"
+// @Failure      1001  {object}  map[string]interface{}  "用户名或密码错误"
+// @Failure      1004  {object}  map[string]interface{}  "认证错误（用户被禁用）"
+// @Router       /api/v1/login [post]
 func Login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
@@ -147,14 +159,21 @@ func Login(c *gin.Context) {
 	db.Save(db.DBClient, user)
 
 	m.JsonResponse(c, m.StatusSucc, gin.H{
-		"token":    token,
-		"username": user.Username,
-		"name":     user.Name,
-		"role":     user.Role,
+		"access_token": token,
+		"username":     user.Username,
+		"name":         user.Name,
+		"role":         user.Role,
 	})
 }
 
 // Logout 登出接口（可选，客户端删除 token 即可）
+// @Summary      用户登出
+// @Description  用户登出，由于使用 JWT，客户端删除 token 即可，服务端无需额外操作
+// @Tags         auth
+// @Accept       application/x-www-form-urlencoded
+// @Produce      json
+// @Success      0  {string}  string  "登出成功"
+// @Router       /api/v1/logout [post]
 func Logout(c *gin.Context) {
 	// 由于使用 JWT，服务端无需保存状态，客户端删除 token 即可
 	// 如果需要实现 token 黑名单，可以在此处添加逻辑
