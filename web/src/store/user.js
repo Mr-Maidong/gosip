@@ -30,13 +30,14 @@ export const useUserStore = defineStore('user', {
      */
     async login(loginForm) {
       const res = await loginApi(loginForm)
-      // res.data 包含 { access_token, username, name, role, user_id }
+      // res.data 包含 { access_token, username, name, role, user_id, avatar }
       this.setToken(res.data.access_token)
       this.setUserInfo({
         username: res.data.username,
         name: res.data.name,
         role: res.data.role,
-        user_id: res.data.user_id
+        user_id: res.data.user_id,
+        avatar: res.data.avatar
       })
       return res
     },

@@ -8,7 +8,9 @@
       <div class="user-info">
         <a-dropdown>
           <span class="user-name">
-            <a-avatar :size="24">{{ userName.charAt(0) }}</a-avatar>
+            <a-avatar :size="24" :src="userAvatar">
+              <template #icon v-if="!userAvatar">{{ userName.charAt(0) }}</template>
+            </a-avatar>
             {{ userName }}
           </span>
           <template #overlay>
@@ -49,6 +51,16 @@ const userStore = useUserStore()
 const selectedKeys = computed(() => [route.path])
 
 const userName = computed(() => userStore.userInfo?.name || '管理员')
+
+// 头像处理：如果是 base64 编码，添加 data URI 前缀
+const userAvatar = computed(() => {
+  const avatar = userStore.userInfo?.avatar
+  if (!avatar) return ''
+  // 如果已经是 data URI 格式，直接返回
+  if (avatar.startsWith('data:')) return avatar
+  // 否则添加 base64 前缀
+  return `data:image/png;base64,${avatar}`
+})
 
 const menuItems = [
   {
