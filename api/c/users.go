@@ -90,6 +90,7 @@ func UsersCreate(c *gin.Context) {
 		Phone:    c.PostForm("phone"),
 		Role:     c.DefaultPostForm("role", "viewer"),
 		Status:   1,
+		Avatar:   utils.GenerateAvatar(username, 200), // 生成随机马赛克头像
 	}
 
 	tx, err := db.NewTx(db.DBClient)
@@ -159,6 +160,10 @@ func UsersUpdate(c *gin.Context) {
 	}
 	if role := c.PostForm("role"); role != "" {
 		user.Role = role
+	}
+	// 支持上传自定义头像（base64 编码）
+	if avatar := c.PostForm("avatar"); avatar != "" {
+		user.Avatar = avatar
 	}
 
 	if err := db.Save(db.DBClient, user); err != nil {

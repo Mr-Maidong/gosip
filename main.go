@@ -71,6 +71,9 @@ func main() {
 	// 创建默认管理员用户（如果不存在）
 	createDefaultAdminUser()
 
+	// 为没有头像的用户生成头像
+	generateAvatarForUsersWithoutAvatar()
+
 	// 根据配置设置 Gin 运行模式
 	if strings.ToUpper(m.MConfig.MOD) == "RELEASE" {
 		gin.SetMode(gin.ReleaseMode)
@@ -104,6 +107,7 @@ func createDefaultAdminUser() {
 		Phone:    "",
 		Role:     "admin",
 		Status:   1,
+		Avatar:   utils.GenerateAvatar("admin", 200), // 生成随机马赛克头像
 	}
 
 	if err := db.Create(db.DBClient, admin); err != nil {
@@ -126,6 +130,28 @@ func createDefaultAdminUser() {
 		}
 		if err := db.Create(db.DBClient, userRole); err != nil {
 			logrus.Errorln("Assign admin role to default user error:", err)
+		}
+	}
+}
+
+// generateAvatarForUsersWithoutAvatar 为没有头像的用户生成头像
+func generateAvatarForUsersWithoutAvatar() {
+	var users []model.User
+	// 查询头像为空的用户
+	db.DBClient.Where("avatar IS NULL OR avatar = ''").Find(&users)
+
+	if len(users) == 0 {
+		return
+	}
+
+	logrus.Infoln("Generating avatars for", len(users), "users")
+
+	for _, user := range users {
+		avatar := utils.GenerateAvatar(user.Username, 200)
+		if avatar != "" {
+			user.Avatar = avatar
+			db.DBClient.Save(&user)
+			logrus.Debugln("Generated avatar for user:", user.Username)
 		}
 	}
 }

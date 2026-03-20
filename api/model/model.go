@@ -140,6 +140,8 @@ type User struct {
 	Role string `json:"role" gorm:"column:role;type:varchar(64);comment:'角色'"`
 	// Status 状态：0-禁用，1-启用
 	Status int `json:"status" gorm:"column:status;type:int;default:1;comment:'状态'"`
+	// Avatar 头像（base64 编码的 PNG 图片）
+	Avatar string `json:"avatar" gorm:"column:avatar;type:text;comment:'头像 (base64 编码)'"`
 	// LastLoginTime 最后登录时间
 	LastLoginTime int64 `json:"last_login_time" gorm:"column:last_login_time;type:bigint;default:0;comment:'最后登录时间'"`
 	// LastLoginIP 最后登录 IP

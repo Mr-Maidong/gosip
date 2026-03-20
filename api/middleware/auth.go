@@ -115,7 +115,7 @@ func ParseToken(tokenString string) (*TokenClaims, error) {
 // @Produce      json
 // @Param        username  formData  string  true  "用户名"
 // @Param        password  formData  string  true  "密码"
-// @Success      0  {object}  map[string]interface{}  "登录成功，返回 Token 和用户信息"
+// @Success      0  {object}  map[string]interface{}  "登录成功，返回 Token 和用户信息（access_token, username, name, role, avatar, user_id）"
 // @Failure      1000  {object}  map[string]interface{}  "参数错误"
 // @Failure      1001  {object}  map[string]interface{}  "用户名或密码错误"
 // @Failure      1004  {object}  map[string]interface{}  "认证错误（用户被禁用）"
@@ -163,6 +163,8 @@ func Login(c *gin.Context) {
 		"username":     user.Username,
 		"name":         user.Name,
 		"role":         user.Role,
+		"avatar":       user.Avatar,
+		"user_id":      user.ID,
 	})
 }
 
