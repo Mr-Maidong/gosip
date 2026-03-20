@@ -9,6 +9,7 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/gofrs/uuid v4.3.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/issue9/identicon/v2 v2.1.2
 	github.com/jinzhu/gorm v1.9.16
 	github.com/panjjo/gorm v1.0.1
 	github.com/panjjo/gosdp v0.0.0-20201029020038-56e3a0ec56ef
