@@ -921,7 +921,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "0": {
-                        "description": "登录成功，返回 Token 和用户信息",
+                        "description": "登录成功，返回 Token 和用户信息（access_token, username, name, role, avatar, user_id）",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -3037,6 +3037,10 @@ const docTemplate = `{
             "properties": {
                 "addtime": {
                     "type": "integer"
+                },
+                "avatar": {
+                    "description": "Avatar 头像（base64 编码的 PNG 图片）",
+                    "type": "string"
                 },
                 "email": {
                     "description": "Email 邮箱",
