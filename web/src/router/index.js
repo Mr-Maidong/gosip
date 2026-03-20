@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/store/user'
 
 const routes = [
   {
@@ -56,6 +57,36 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  
+  // 恢复 localStorage 中的用户状态
+  if (!userStore.token) {
+    userStore.restoreFromStorage()
+  }
+
+  // 设置页面标题
+  document.title = to.meta.title ? `${to.meta.title} - GoSIP` : 'GoSIP'
+
+  // 检查是否需要登录
+  if (to.path !== '/login') {
+    if (!userStore.isLoggedIn) {
+      // 未登录，跳转到登录页
+      next('/login')
+      return
+    }
+  } else {
+    // 已登录访问登录页，跳转到首页
+    if (userStore.isLoggedIn) {
+      next('/')
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

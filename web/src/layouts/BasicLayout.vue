@@ -8,8 +8,8 @@
       <div class="user-info">
         <a-dropdown>
           <span class="user-name">
-            <a-avatar :size="24">U</a-avatar>
-            管理员
+            <a-avatar :size="24">{{ userName.charAt(0) }}</a-avatar>
+            {{ userName }}
           </span>
           <template #overlay>
             <a-menu>
@@ -31,19 +31,24 @@
 </template>
 
 <script setup>
-import { ref, computed, h } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { message } from 'ant-design-vue'
 import {
   HomeOutlined,
   DesktopOutlined,
   VideoCameraOutlined,
   SettingOutlined
 } from '@ant-design/icons-vue'
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 
 const selectedKeys = computed(() => [route.path])
+
+const userName = computed(() => userStore.userInfo?.name || '管理员')
 
 const menuItems = [
   {
@@ -73,10 +78,16 @@ const menuItems = [
   }
 ]
 
-const handleLogout = () => {
-  // TODO: 实现登出逻辑
+const handleLogout = async () => {
+  await userStore.logout()
+  message.success('已退出登录')
   router.push('/login')
 }
+
+// 组件挂载时恢复用户状态
+onMounted(() => {
+  userStore.restoreFromStorage()
+})
 </script>
 
 <style lang="less" scoped>

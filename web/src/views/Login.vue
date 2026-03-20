@@ -21,7 +21,12 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
+import { useUserStore } from '@/store/user'
 
+const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const formState = reactive({
   username: '',
@@ -30,10 +35,19 @@ const formState = reactive({
 
 const handleLogin = async () => {
   loading.value = true
-  // TODO: 实现登录逻辑
-  setTimeout(() => {
+  try {
+    await userStore.login({
+      username: formState.username,
+      password: formState.password
+    })
+    message.success('登录成功')
+    // 登录成功后跳转到首页
+    router.push('/')
+  } catch (error) {
+    // 错误已在 request 拦截器中处理
+  } finally {
     loading.value = false
-  }, 1000)
+  }
 }
 </script>
 

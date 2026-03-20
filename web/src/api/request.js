@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
+import { useUserStore } from '@/store/user'
 
 // 创建 axios 实例
 const request = axios.create({
@@ -10,11 +11,11 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
-    // TODO: 添加 token
-    // const token = localStorage.getItem('token')
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    // 从 localStorage 获取 token
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   (error) => {
@@ -26,7 +27,19 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => {
     const res = response.data
-    // TODO: 处理业务错误
+    // 处理业务错误（code 不为 0 表示失败）
+    if (res.code != 0) {
+      message.error(res.msg || '请求失败')
+      // 认证错误，清除 token 并跳转到登录页
+      if (res.code === 1004) {
+        const userStore = useUserStore()
+        userStore.logout()
+        localStorage.removeItem('token')
+        localStorage.removeItem('userInfo')
+        window.location.href = '/login'
+      }
+      return Promise.reject(new Error(res.msg || '请求失败'))
+    }
     return res
   },
   (error) => {
