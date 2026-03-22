@@ -81,11 +81,16 @@ func Auth(c *gin.Context) {
 
 // GenerateToken 生成 Token
 func GenerateToken(userID uint, username string) string {
-	token := utils.JWTCreateToken(map[string]interface{}{
+	// 从配置中获取 Token 有效期（天），默认 7 天
+	tokenExpire := m.MConfig.JWT.TokenExpire
+	if tokenExpire <= 0 {
+		tokenExpire = 7
+	}
+	token := utils.JWTCreateToken(map[string]any{
 		"user_id":    userID,
 		"username":   username,
-		"exp":        utils.GetTime() + 86400*7, // 7 天有效期
-		"issuer":     "gosip",
+		"exp":        utils.GetTime() + int64(tokenExpire)*86400,
+		"issuer":     "ysip",
 		"not_before": utils.GetTime(),
 	})
 	return token
@@ -109,7 +114,7 @@ func ParseToken(tokenString string) (*TokenClaims, error) {
 
 // Login 登录接口
 // @Summary      用户登录
-// @Description  用户登录获取 JWT Token，Token 有效期 7 天
+// @Description  用户登录获取 JWT Token，Token 有效期可在 config.yml 中配置（jwt.token_expire，默认 7 天）
 // @Tags         auth
 // @Accept       application/x-www-form-urlencoded
 // @Produce      json

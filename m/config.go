@@ -25,12 +25,19 @@ type Config struct {
 	GB28181   *SysInfo          `json:"gb28181" yaml:"gb28181" mapstructure:"gb28181"`
 	Notify    map[string]string `json:"notify" yaml:"notify" mapstructure:"notify"`
 	NotifyMap map[string]string
+	JWT       JWTConfig         `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
 }
 
 type RecordCfg struct {
 	FilePath  string `json:"filepath" yaml:"filepath" mapstructure:"filepath"`
 	Expire    int    `json:"expire" yaml:"expire"  mapstructure:"expire"`
 	Recordmax int    `json:"recordmax" yaml:"recordmax"  mapstructure:"recordmax"`
+}
+
+// JWTConfig JWT 配置
+type JWTConfig struct {
+	// TokenExpire Token 有效期（天），默认 7 天
+	TokenExpire int `json:"token_expire" yaml:"token_expire" mapstructure:"token_expire"`
 }
 
 // Stream Stream
@@ -88,6 +95,7 @@ func LoadConfig() {
 	viper.SetDefault("udp", "0.0.0.0:5060")
 	viper.SetDefault("api", "0.0.0.0:8090")
 	viper.SetDefault("mod", "release")
+	viper.SetDefault("jwt.token_expire", 7) // 默认 7 天
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
