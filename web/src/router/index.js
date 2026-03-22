@@ -21,10 +21,10 @@ const routes = [
         meta: { title: '设备管理' }
       },
       {
-        path: '/channels',
-        name: 'Channels',
-        component: () => import('@/views/channels/index.vue'),
-        meta: { title: '通道管理' }
+        path: '/platform',
+        name: 'Platform',
+        component: () => import('@/views/platform/index.vue'),
+        meta: { title: '平台管理' }
       },
       {
         path: '/streams',
@@ -62,7 +62,7 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  
+
   // 恢复 localStorage 中的用户状态
   if (!userStore.token) {
     userStore.restoreFromStorage()
