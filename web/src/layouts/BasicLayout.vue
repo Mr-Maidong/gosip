@@ -2,7 +2,7 @@
   <a-layout class="layout">
     <a-layout-header class="header">
       <div class="logo">
-        <span>GoSIP</span>
+        <span>YSIP</span>
       </div>
       <a-menu v-model:selectedKeys="selectedKeys" theme="dark" mode="horizontal" :items="menuItems" />
       <div class="user-info">
@@ -27,7 +27,7 @@
       <RouterView />
     </a-layout-content>
     <a-layout-footer class="footer">
-      GoSIP Web ©2026 Created by GoSIP Team
+      YSIP Web ©2026 Created by YSIP Team
     </a-layout-footer>
   </a-layout>
 </template>

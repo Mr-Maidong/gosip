@@ -69,7 +69,7 @@ router.beforeEach((to, from, next) => {
   }
 
   // 设置页面标题
-  document.title = to.meta.title ? `${to.meta.title} - GoSIP` : 'GoSIP'
+  document.title = to.meta.title ? `${to.meta.title} - YSIP` : 'YSIP'
 
   // 检查是否需要登录
   if (to.path !== '/login') {

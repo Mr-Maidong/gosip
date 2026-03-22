@@ -1,6 +1,6 @@
 <template>
   <div class="home-container">
-    <h1>欢迎使用 GoSIP Web</h1>
+    <h1>欢迎使用 YSIP Web</h1>
     <p>GB28181 SIP 服务器管理平台</p>
   </div>
 </template>

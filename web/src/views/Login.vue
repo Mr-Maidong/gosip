@@ -67,7 +67,7 @@
       </div>
       
       <div class="login-footer">
-        <p class="copyright">© 2026 GoSIP Team. All rights reserved.</p>
+        <p class="copyright">© 2026 YoSIP Team. All rights reserved.</p>
       </div>
     </div>
   </div>

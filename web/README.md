@@ -1,6 +1,6 @@
-# GoSIP Web
+# YSIP Web
 
-GoSIP Web 管理平台 - 基于 Vue 3 + Pinia + Ant Design Vue 的前端项目
+YSIP Web 管理平台 - 基于 Vue 3 + Pinia + Ant Design Vue 的前端项目
 
 ## 技术栈
 
@@ -79,4 +79,4 @@ VITE_API_BASE_URL=/api
 
 ## 相关项目
 
-- [GoSIP](https://github.com/panjjo/gosip) - GB28181 SIP 服务器
+- [YSIP](https://github.com/panjjo/gosip) - GB28181 SIP 服务器
