@@ -1,8 +1,8 @@
 module github.com/panjjo/gosip
 
-go 1.21
+go 1.26
 
-toolchain go1.21.13
+toolchain go1.26.1
 
 require (
 	github.com/gin-contrib/cors v1.4.0
