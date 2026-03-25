@@ -22,6 +22,59 @@ make docker
 make all
 ```
 
+## Web (Vue3 + Vite)
+
+Web 前端位于 `web/` 目录，使用 Vue3 + Vite + Ant Design Vue + Pinia。
+
+```bash
+# 安装依赖
+yarn install
+
+# 开发模式
+yarn dev
+
+# 构建生产版本
+yarn build
+
+# 预览构建结果
+yarn preview
+```
+
+### Web 目录结构
+
+```
+web/src/
+├── api/           # API 请求模块
+├── assets/        # 静态资源 (svg 图标)
+├── components/    # 公共组件
+├── hooks/         # Vue Composition API hooks
+├── layouts/       # 布局组件 (BasicLayout.vue)
+├── router/        # 路由配置 (index.js)
+├── store/         # Pinia 状态管理
+│   ├── index.js   # store 导出
+│   ├── user.js    # 用户状态 (token, userInfo)
+│   └── tabs.js    # 标签页状态
+├── styles/        # 全局样式
+├── utils/         # 工具函数
+├── views/         # 页面组件
+│   ├── Home.vue           # 首页
+│   ├── Login.vue          # 登录页
+│   ├── devices/index.vue  # 设备管理
+│   ├── platform/index.vue # 平台管理
+│   ├── streams/index.vue   # 流管理
+│   └── settings/index.vue # 系统设置
+├── App.vue
+└── main.js
+```
+
+### Web 技术栈
+
+- **框架**: Vue 3 (Composition API)
+- **构建工具**: Vite
+- **UI 组件库**: Ant Design Vue
+- **状态管理**: Pinia
+- **路由**: Vue Router
+
 ## Architecture
 
 ```
