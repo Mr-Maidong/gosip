@@ -18,7 +18,7 @@ const routes = [
         path: '/devices',
         name: 'Devices',
         component: () => import('@/views/devices/index.vue'),
-        meta: { title: '设备管理', keepAlive: true }
+        meta: { title: '监控管理', keepAlive: true }
       },
       {
         path: '/platform',

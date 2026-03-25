@@ -5,7 +5,9 @@ export const useTabsStore = defineStore('tabs', {
     // 已打开的标签页
     openedTabs: [],
     // 当前激活的标签页
-    activeTab: ''
+    activeTab: '',
+    // 是否已从 localStorage 恢复
+    restored: false
   }),
 
   getters: {
@@ -26,12 +28,19 @@ export const useTabsStore = defineStore('tabs', {
       // 检查是否已存在
       const exists = this.openedTabs.find(t => t.path === tab.path)
       if (!exists) {
-        this.openedTabs.push({
+        const newTab = {
           path: tab.path,
           title: tab.title,
           name: tab.name,
           keepAlive: tab.keepAlive !== false
-        })
+        }
+        // 如果是首页，插入到第一个位置
+        if (tab.path === '/home') {
+          this.openedTabs.unshift(newTab)
+        } else {
+          // 其他标签添加到末尾
+          this.openedTabs.push(newTab)
+        }
       }
       this.activeTab = tab.path
       this.saveToStorage()
@@ -70,32 +79,10 @@ export const useTabsStore = defineStore('tabs', {
     },
 
     /**
-     * 关闭其他标签页
-     * @param {string} path - 保留的标签页路径
-     */
-    closeOtherTabs(path) {
-      this.openedTabs = this.openedTabs.filter(
-        t => t.path === path || t.path === '/home'
-      )
-      this.activeTab = path
-      this.saveToStorage()
-    },
-
-    /**
-     * 关闭所有标签页，回到首页
-     */
-    closeAllTabs() {
-      this.openedTabs = this.openedTabs.filter(t => t.path === '/home')
-      this.activeTab = '/home'
-      this.saveToStorage()
-    },
-
-    /**
      * 从 localStorage 恢复状态
      */
     restoreFromStorage() {
       const savedTabs = localStorage.getItem('openedTabs')
-      const savedActive = localStorage.getItem('activeTab')
 
       if (savedTabs) {
         try {
@@ -105,20 +92,21 @@ export const useTabsStore = defineStore('tabs', {
         }
       }
 
-      if (savedActive) {
-        this.activeTab = savedActive
-      }
-
-      // 确保至少有一个首页标签
-      if (this.openedTabs.length === 0) {
-        this.openedTabs.push({
+      // 确保至少有一个首页标签，且在第一个位置
+      const homeIndex = this.openedTabs.findIndex(t => t.path === '/home')
+      if (homeIndex === -1) {
+        this.openedTabs.unshift({
           path: '/home',
           title: '首页',
           name: 'Home',
           keepAlive: true
         })
-        this.activeTab = '/home'
+      } else if (homeIndex !== 0) {
+        // 将首页移到第一个位置
+        const [homeTab] = this.openedTabs.splice(homeIndex, 1)
+        this.openedTabs.unshift(homeTab)
       }
+      this.restored = true
     },
 
     /**
