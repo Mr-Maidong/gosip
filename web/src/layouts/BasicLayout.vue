@@ -2,11 +2,10 @@
   <a-layout class="layout">
     <!-- 垂直侧边栏 -->
     <a-layout-sider
-      v-model:collapsed="collapsed"
       :trigger="null"
-      collapsible
       class="sider"
       theme="light"
+      width="180"
     >
       <!-- 顶部系统名称 -->
       <div class="logo">
@@ -26,42 +25,60 @@
         class="menu"
       />
 
-      <!-- 底部用户信息 -->
-      <div class="user-info">
-        <a-dropdown placement="topRight">
-          <div class="user-wrapper">
-            <a-avatar :size="32" :src="userAvatar">
-              <template #icon v-if="!userAvatar">{{ userName.charAt(0) }}</template>
-            </a-avatar>
-            <div class="user-details" v-if="!collapsed">
-              <div class="user-name">{{ userName }}</div>
-              <div class="user-role">{{ userRole }}</div>
-            </div>
-          </div>
-          <template #overlay>
-            <a-menu>
-              <a-menu-item key="settings">系统设置</a-menu-item>
-              <a-menu-divider />
-              <a-menu-item key="logout" @click="handleLogout">退出登录</a-menu-item>
-            </a-menu>
-          </template>
-        </a-dropdown>
-      </div>
     </a-layout-sider>
 
     <!-- 主内容区 -->
     <a-layout class="main-layout">
-      <div class="header-breadcrumb">
-          <a-breadcrumb>
-            <a-breadcrumb-item v-for="item in breadcrumbs" :key="item.path">
-              {{ item.title }}
-            </a-breadcrumb-item>
-          </a-breadcrumb>
+      <!-- 顶部 Header -->
+      <a-layout-header class="header">
+        <div class="header-left">
+          <div class="tabs-wrapper">
+            <a-tabs
+              v-model:activeKey="activeTab"
+              type="editable-card"
+              :tabBarStyle="{ margin: '0', padding: '0' }"
+              @edit="onTabEdit"
+              @change="onTabChange"
+              hide-add
+            >
+              <a-tab-pane
+                v-for="tab in openedTabs"
+                :key="tab.path"
+                :tab="tab.title"
+                :closable="tab.path !== '/home'"
+              />
+            </a-tabs>
+          </div>
         </div>
+        <div class="header-right">
+          <a-dropdown placement="bottomRight">
+            <div class="user-wrapper">
+              <div class="user-details">
+                <div class="user-name">{{ userName }}</div>
+                <div class="user-role">{{ userRole }}</div>
+              </div>
+              <a-avatar :size="32" :src="userAvatar">
+                <template #icon v-if="!userAvatar">{{ userName.charAt(0) }}</template>
+              </a-avatar>
+            </div>
+            <template #overlay>
+              <a-menu>
+                <a-menu-item key="settings">系统设置</a-menu-item>
+                <a-menu-divider />
+                <a-menu-item key="logout" @click="handleLogout">退出登录</a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+        </div>
+      </a-layout-header>
 
       <!-- 内容区 -->
       <a-layout-content class="content">
-        <RouterView />
+        <RouterView v-slot="{ Component, route }">
+          <keep-alive :include="cachedViews">
+            <component :is="Component" :key="route.path" />
+          </keep-alive>
+        </RouterView>
       </a-layout-content>
 
       <!-- 底部 -->
@@ -73,26 +90,32 @@
 </template>
 
 <script setup>
-import { ref, computed, h, onMounted } from 'vue'
+import { computed, h, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
   HomeOutlined,
   DesktopOutlined,
   VideoCameraOutlined,
-  SettingOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined
+  SettingOutlined
 } from '@ant-design/icons-vue'
 import { useUserStore } from '@/store/user'
+import { useTabsStore } from '@/store/tabs'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
-
-const collapsed = ref(false)
+const tabsStore = useTabsStore()
 
 const selectedKeys = computed(() => [route.path])
+
+// 标签页相关
+const openedTabs = computed(() => tabsStore.openedTabs)
+const activeTab = computed({
+  get: () => tabsStore.activeTab,
+  set: (val) => tabsStore.setActiveTab(val)
+})
+const cachedViews = computed(() => tabsStore.cachedViews)
 
 const userName = computed(() => userStore.userInfo?.name || '管理员')
 
@@ -114,15 +137,6 @@ const userAvatar = computed(() => {
   if (avatar.startsWith('data:')) return avatar
   // 否则添加 base64 前缀
   return `data:image/png;base64,${avatar}`
-})
-
-// 面包屑导航
-const breadcrumbs = computed(() => {
-  const matched = route.matched.filter(item => item.meta && item.meta.title)
-  return matched.map(item => ({
-    path: item.path,
-    title: item.meta.title
-  }))
 })
 
 const menuItems = [
@@ -186,8 +200,32 @@ const menuItems = [
   }
 ]
 
+// 点击菜单
 const handleMenuClick = ({ key }) => {
+  const route = router.getRoutes().find(r => r.path === key)
+  if (route) {
+    tabsStore.addTab({
+      path: key,
+      title: route.meta?.title || route.name,
+      name: route.name,
+      keepAlive: route.meta?.keepAlive !== false
+    })
+  }
   router.push(key)
+}
+
+// Tab 切换
+const onTabChange = (path) => {
+  router.push(path)
+}
+
+// Tab 编辑（删除）
+const onTabEdit = (targetKey, action) => {
+  if (action === 'remove') {
+    tabsStore.removeTab(targetKey)
+    // 路由跳转
+    router.push(activeTab.value)
+  }
 }
 
 const handleLogout = async () => {
@@ -196,9 +234,38 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
-// 组件挂载时恢复用户状态
+// 路由变化时自动添加 tab
+watch(
+  () => route.path,
+  (path) => {
+    if (path === '/login') return
+    const routeInfo = router.getRoutes().find(r => r.path === path)
+    if (routeInfo && routeInfo.meta?.title) {
+      tabsStore.addTab({
+        path: path,
+        title: routeInfo.meta.title,
+        name: routeInfo.name,
+        keepAlive: routeInfo.meta.keepAlive !== false
+      })
+    }
+  },
+  { immediate: true }
+)
+
+// 组件挂载时恢复状态
 onMounted(() => {
   userStore.restoreFromStorage()
+  tabsStore.restoreFromStorage()
+
+  // 确保首页已添加
+  if (openedTabs.value.length === 0) {
+    tabsStore.addTab({
+      path: '/home',
+      title: '首页',
+      name: 'Home',
+      keepAlive: true
+    })
+  }
 })
 </script>
 
@@ -262,19 +329,99 @@ onMounted(() => {
 
   }
 
-  .user-info {
-    margin-block: 4px;
-    height: 54px;
+}
+
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.header {
+  background: #fff;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  height: 56px;
+
+  .header-left {
     display: flex;
     align-items: center;
-    border-top: 1px solid #f0f0f0;
+    flex: 1;
+
+    .tabs-wrapper {
+      flex: 1;
+      overflow: hidden;
+
+      :deep(.ant-tabs) {
+        .ant-tabs-nav {
+          margin: 0;
+        }
+
+        .ant-tabs-tab {
+          position: relative;
+          border: none !important;
+          background: transparent;
+          padding: 4px 12px;
+          margin-right: 2px;
+          font-size: 13px;
+          color: #666;
+          border-radius: 4px;
+          transition: all 0.15s;
+
+          &:hover {
+            color: #1890ff;
+            background: #f0f5ff;
+          }
+
+          .anticon-close {
+            position: absolute;
+            top: 50%;
+            right: 0%;
+            transform: translate(-50%, -55%);
+            opacity: 0;
+            font-size: 10px;
+            transition: all 0.15s;
+          }
+
+          &:hover .anticon-close {
+            opacity: 1;
+          }
+
+          .ant-tabs-tab-remove {
+            margin-left: 2px;
+            color: #999;
+
+            &:hover {
+              color: #ff4d4f;
+            }
+          }
+        }
+
+        .ant-tabs-tab-active {
+          color: #1890ff !important;
+          background: #e6f7ff !important;
+        }
+
+        .ant-tabs-nav::before {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .header-right {
+    flex-shrink: 0;
 
     .user-wrapper {
       display: flex;
       align-items: center;
       gap: 10px;
       cursor: pointer;
-      padding: 8px;
+      padding: 6px 12px;
       border-radius: 8px;
       transition: background 0.3s;
 
@@ -285,36 +432,22 @@ onMounted(() => {
       .user-details {
         display: flex;
         flex-direction: column;
+        line-height: 1;
         gap: 2px;
-        overflow: hidden;
-        flex: 1;
 
         .user-name {
           font-size: 14px;
           font-weight: 500;
           color: #333;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
         }
 
         .user-role {
           font-size: 12px;
           color: #999;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
         }
       }
     }
   }
-}
-
-.main-layout {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
 }
 
 .content {

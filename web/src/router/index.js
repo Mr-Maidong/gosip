@@ -12,31 +12,31 @@ const routes = [
         path: '/home',
         name: 'Home',
         component: () => import('@/views/Home.vue'),
-        meta: { title: '首页' }
+        meta: { title: '首页', keepAlive: true }
       },
       {
         path: '/devices',
         name: 'Devices',
         component: () => import('@/views/devices/index.vue'),
-        meta: { title: '设备管理' }
+        meta: { title: '设备管理', keepAlive: true }
       },
       {
         path: '/platform',
         name: 'Platform',
         component: () => import('@/views/platform/index.vue'),
-        meta: { title: '平台管理' }
+        meta: { title: '平台管理', keepAlive: true }
       },
       {
         path: '/streams',
         name: 'Streams',
         component: () => import('@/views/streams/index.vue'),
-        meta: { title: '流管理' }
+        meta: { title: '流管理', keepAlive: true }
       },
       {
         path: '/settings',
         name: 'Settings',
         component: () => import('@/views/settings/index.vue'),
-        meta: { title: '系统设置' }
+        meta: { title: '系统设置', keepAlive: true }
       }
     ]
   },
