@@ -5,7 +5,7 @@
       :trigger="null"
       class="sider"
       theme="light"
-      width="180"
+      width="220"
     >
       <!-- 顶部系统名称 -->
       <div class="logo">
@@ -75,12 +75,11 @@
             <component :is="Component" :key="route.path" />
           </keep-alive>
         </RouterView>
+        <!-- 底部 -->
+        <a-layout-footer class="footer">
+          YSIP Web ©2026 Created by YSIP Team
+        </a-layout-footer>
       </a-layout-content>
-
-      <!-- 底部 -->
-      <a-layout-footer class="footer">
-        YSIP Web ©2026 Created by YSIP Team
-      </a-layout-footer>
     </a-layout>
   </a-layout>
 </template>
@@ -265,7 +264,8 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .layout {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sider {
@@ -326,6 +326,7 @@ onMounted(() => {
 }
 
 .main-layout {
+  width: calc(100vw - 220px);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -431,10 +432,6 @@ onMounted(() => {
 
 .content {
   flex: 1;
-  margin: 16px 16px 0 16px;
-  padding: 24px;
-  background: #fff;
-  border-radius: 8px;
   overflow-y: auto;
   min-height: 280px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
