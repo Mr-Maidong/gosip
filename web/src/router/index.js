@@ -12,31 +12,56 @@ const routes = [
         path: '/home',
         name: 'Home',
         component: () => import('@/views/Home.vue'),
-        meta: { title: '首页', keepAlive: true }
-      },
-      {
-        path: '/devices',
-        name: 'Devices',
-        component: () => import('@/views/devices/index.vue'),
-        meta: { title: '监控管理', keepAlive: true }
+        meta: {
+          title: '首页',
+          keepAlive: true,
+          group: 'console',
+          icon: new URL('@/assets/svgs/home.svg', import.meta.url).href
+        }
       },
       {
         path: '/platform',
         name: 'Platform',
         component: () => import('@/views/platform/index.vue'),
-        meta: { title: '平台管理', keepAlive: true }
+        meta: {
+          title: '平台管理',
+          keepAlive: true,
+          group: 'device',
+          icon: new URL('@/assets/svgs/gb28181.svg', import.meta.url).href
+        }
+      },
+      {
+        path: '/devices',
+        name: 'Devices',
+        component: () => import('@/views/devices/index.vue'),
+        meta: {
+          title: '监控管理',
+          keepAlive: true,
+          group: 'device',
+          icon: new URL('@/assets/svgs/device.svg', import.meta.url).href
+        }
       },
       {
         path: '/streams',
         name: 'Streams',
         component: () => import('@/views/streams/index.vue'),
-        meta: { title: '流管理', keepAlive: true }
+        meta: {
+          title: '流管理',
+          keepAlive: true,
+          group: 'stream',
+          icon: new URL('@/assets/svgs/stream.svg', import.meta.url).href
+        }
       },
       {
         path: '/settings',
         name: 'Settings',
         component: () => import('@/views/settings/index.vue'),
-        meta: { title: '系统设置', keepAlive: true }
+        meta: {
+          title: '系统设置',
+          keepAlive: true,
+          group: 'system',
+          icon: new URL('@/assets/svgs/settings.svg', import.meta.url).href
+        }
       }
     ]
   },

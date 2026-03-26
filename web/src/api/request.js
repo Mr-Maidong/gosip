@@ -10,7 +10,7 @@ const request = axios.create({
 
 // 请求拦截器
 request.interceptors.request.use(
-  (config) => {
+  config => {
     // 从 localStorage 获取 token
     const token = localStorage.getItem('token')
     if (token) {
@@ -18,14 +18,14 @@ request.interceptors.request.use(
     }
     return config
   },
-  (error) => {
+  error => {
     return Promise.reject(error)
   }
 )
 
 // 响应拦截器
 request.interceptors.response.use(
-  (response) => {
+  response => {
     const res = response.data
     // 处理业务错误（code 不为 0 表示失败）
     if (res.code != 0) {
@@ -42,7 +42,7 @@ request.interceptors.response.use(
     }
     return res
   },
-  (error) => {
+  error => {
     message.error(error.message || '请求失败')
     return Promise.reject(error)
   }

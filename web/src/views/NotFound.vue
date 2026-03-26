@@ -3,7 +3,7 @@
     <div class="not-found-content">
       <h1>404</h1>
       <p>抱歉，您访问的页面不存在</p>
-      <a-button type="primary" @click="goHome">返回首页</a-button>
+      <a-button type="primary" @click="goHome"> 返回首页 </a-button>
     </div>
   </div>
 </template>

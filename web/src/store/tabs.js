@@ -12,10 +12,8 @@ export const useTabsStore = defineStore('tabs', {
 
   getters: {
     // 获取需要缓存的组件名列表
-    cachedViews: (state) => {
-      return state.openedTabs
-        .filter(tab => tab.keepAlive)
-        .map(tab => tab.name)
+    cachedViews: state => {
+      return state.openedTabs.filter(tab => tab.keepAlive).map(tab => tab.name)
     }
   },
 
