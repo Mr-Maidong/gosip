@@ -5,7 +5,7 @@ import request from './request'
  */
 export function getDevices(params) {
   return request({
-    url: '/devices',
+    url: '/v1/devices',
     method: 'get',
     params
   })

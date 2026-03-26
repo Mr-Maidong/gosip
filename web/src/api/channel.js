@@ -5,7 +5,7 @@ import request from './request'
  */
 export function getChannels(params) {
   return request({
-    url: '/channels',
+    url: '/v1/channels',
     method: 'get',
     params
   })

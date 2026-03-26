@@ -1,30 +1,39 @@
 <template>
   <a-layout class="layout">
     <!-- 垂直侧边栏 -->
-    <a-layout-sider
-      :trigger="null"
-      class="sider"
-      theme="light"
-      width="220"
-    >
+    <a-layout-sider :trigger="null" class="sider" theme="light" width="220">
       <!-- 顶部系统名称 -->
       <div class="logo">
         <div class="logo-icon">
-          <svg viewBox="0 0 1147 1024" height="32"><path d="M577.980145 584.790361L955.058892 766.026024v38.640578l-377.078747 209.981687-377.06641-218.95094v-34.149783z" fill="#1890FF" opacity=".2" p-id="7886"></path><path d="M579.238554 978.15441L959.969157 766.13706 579.324916 531.863133l-2.553832-0.024675-380.69359 225.23065 380.718265 221.060627 2.430458 0.024675zM950.222651 765.902651L578.066506 973.157783 205.836337 757.019759 578.004819 536.847422 950.222651 765.902651z" fill="#FFFFFF" opacity=".2" p-id="7887"></path><path d="M577.77041 302.857253l502.771662 243.243181v43.846939L577.758072 871.732434 75.023422 577.90612v-37.826313z" fill="#1890FF" opacity=".4" p-id="7888"></path><path d="M579.028819 830.007518L1085.44 546.186795l-506.324819-313.615422-2.553832-0.024674L70.199518 534.046843l506.374169 295.936 2.455132 0.024675z m496.701687-284.030458L577.844434 824.998554 79.909012 533.997494l497.886072-296.454169 497.935422 308.433735z" fill="#FFFFFF" opacity=".4" p-id="7889"></path><path d="M571.515373 89.988627l565.605784 270.558072V412.06747L571.515373 725.497831 5.921928 398.656771v-44.809253z" fill="#1890FF" opacity=".6" p-id="7890"></path><path d="M572.761446 676.123759L1142.068434 360.645398 572.847807 12.028916l-2.541494-0.024675L1.061012 347.148337l569.269976 328.963085 2.430458 0.012337z m559.52347-315.700434L571.589398 671.127133 10.856867 347.098988 571.540048 17.025542l560.73253 343.410121z" fill="#FFFFFF" opacity=".6" p-id="7891"></path></svg>
+          <svg viewBox="0 0 1147 1024" height="32">
+            <path d="M577.980145 584.790361L955.058892 766.026024v38.640578l-377.078747 209.981687-377.06641-218.95094v-34.149783z" fill="#1890FF" opacity=".2" p-id="7886" />
+            <path
+              d="M579.238554 978.15441L959.969157 766.13706 579.324916 531.863133l-2.553832-0.024675-380.69359 225.23065 380.718265 221.060627 2.430458 0.024675zM950.222651 765.902651L578.066506 973.157783 205.836337 757.019759 578.004819 536.847422 950.222651 765.902651z"
+              fill="#FFFFFF"
+              opacity=".2"
+              p-id="7887"
+            />
+            <path d="M577.77041 302.857253l502.771662 243.243181v43.846939L577.758072 871.732434 75.023422 577.90612v-37.826313z" fill="#1890FF" opacity=".4" p-id="7888" />
+            <path
+              d="M579.028819 830.007518L1085.44 546.186795l-506.324819-313.615422-2.553832-0.024674L70.199518 534.046843l506.374169 295.936 2.455132 0.024675z m496.701687-284.030458L577.844434 824.998554 79.909012 533.997494l497.886072-296.454169 497.935422 308.433735z"
+              fill="#FFFFFF"
+              opacity=".4"
+              p-id="7889"
+            />
+            <path d="M571.515373 89.988627l565.605784 270.558072V412.06747L571.515373 725.497831 5.921928 398.656771v-44.809253z" fill="#1890FF" opacity=".6" p-id="7890" />
+            <path
+              d="M572.761446 676.123759L1142.068434 360.645398 572.847807 12.028916l-2.541494-0.024675L1.061012 347.148337l569.269976 328.963085 2.430458 0.012337z m559.52347-315.700434L571.589398 671.127133 10.856867 347.098988 571.540048 17.025542l560.73253 343.410121z"
+              fill="#FFFFFF"
+              opacity=".6"
+              p-id="7891"
+            />
+          </svg>
         </div>
         <span>YSIP</span>
       </div>
 
       <!-- 中间菜单 -->
-      <a-menu
-        v-model:selectedKeys="selectedKeys"
-        theme="light"
-        mode="inline"
-        :items="menuItems"
-        @click="handleMenuClick"
-        class="menu"
-      />
-
+      <a-menu v-model:selected-keys="selectedKeys" theme="light" mode="inline" :items="menuItems" class="menu" @click="handleMenuClick" />
     </a-layout-sider>
 
     <!-- 主内容区 -->
@@ -33,16 +42,8 @@
       <a-layout-header class="header">
         <div class="header-left">
           <div class="tabs-wrapper" @dblclick="onTabsDblClick">
-            <a-tabs type="card"
-              v-model:activeKey="activeTab"
-              :tabBarStyle="{ margin: '0', padding: '0' }"
-              @change="onTabChange"
-            >
-              <a-tab-pane
-                v-for="tab in openedTabs"
-                :key="tab.path"
-                :tab="tab.title"
-              />
+            <a-tabs v-model:active-key="activeTab" type="card" :tab-bar-style="{ margin: '0', padding: '0' }" @change="onTabChange">
+              <a-tab-pane v-for="tab in openedTabs" :key="tab.path" :tab="tab.title" />
             </a-tabs>
           </div>
         </div>
@@ -50,18 +51,24 @@
           <a-dropdown placement="bottomRight">
             <div class="user-wrapper">
               <div class="user-details">
-                <div class="user-name">{{ userName }}</div>
-                <div class="user-role">{{ userRole }}</div>
+                <div class="user-name">
+                  {{ userName }}
+                </div>
+                <div class="user-role">
+                  {{ userRole }}
+                </div>
               </div>
-              <a-avatar :size="32" :src="userAvatar">
-                <template #icon v-if="!userAvatar">{{ userName.charAt(0) }}</template>
+              <a-avatar class="user-avatar" :size="32" :src="userAvatar">
+                <template v-if="!userAvatar" #icon>
+                  {{ userName.charAt(0) }}
+                </template>
               </a-avatar>
             </div>
             <template #overlay>
               <a-menu>
-                <a-menu-item key="settings">系统设置</a-menu-item>
+                <a-menu-item key="settings"> 系统设置 </a-menu-item>
                 <a-menu-divider />
-                <a-menu-item key="logout" @click="handleLogout">退出登录</a-menu-item>
+                <a-menu-item key="logout" @click="handleLogout"> 退出登录 </a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
@@ -70,15 +77,13 @@
 
       <!-- 内容区 -->
       <a-layout-content class="content">
-        <RouterView v-slot="{ Component, route }">
+        <RouterView v-slot="{ Component, route: currentRoute }">
           <keep-alive :include="cachedViews">
-            <component :is="Component" :key="route.path" />
+            <component :is="Component" :key="currentRoute.path" />
           </keep-alive>
         </RouterView>
         <!-- 底部 -->
-        <a-layout-footer class="footer">
-          YSIP Web ©2026 Created by YSIP Team
-        </a-layout-footer>
+        <a-layout-footer class="footer"> YSIP Web ©2026 Created by YSIP Team </a-layout-footer>
       </a-layout-content>
     </a-layout>
   </a-layout>
@@ -96,13 +101,47 @@ const route = useRoute()
 const userStore = useUserStore()
 const tabsStore = useTabsStore()
 
+const menuItems = computed(() => {
+  const groupMap = {
+    console: { label: '控制台', key: 'console_group' },
+    device: { label: '设备管理', key: 'device_group' },
+    stream: { label: '流媒体管理', key: 'stream_group' },
+    system: { label: '系统管理', key: 'system_group' }
+  }
+
+  const groups = {}
+  const layoutRoute = router.getRoutes().find(r => r.name === 'Layout')
+  const children = layoutRoute?.children || []
+
+  children.forEach(r => {
+    if (!r.meta?.title || !r.meta?.group) return
+    const { group, icon, title } = r.meta
+    if (!groups[group]) {
+      groups[group] = {
+        key: groupMap[group]?.key || group,
+        type: 'group',
+        label: groupMap[group]?.label || group,
+        children: []
+      }
+    }
+    groups[group].children.push({
+      key: r.path,
+      icon: icon ? h('img', { src: new URL(icon, import.meta.url).href }) : null,
+      label: title,
+      title: title
+    })
+  })
+
+  return Object.values(groups)
+})
+
 const selectedKeys = computed(() => [route.path])
 
 // 标签页相关
 const openedTabs = computed(() => tabsStore.openedTabs)
 const activeTab = computed({
   get: () => tabsStore.activeTab,
-  set: (val) => tabsStore.setActiveTab(val)
+  set: val => tabsStore.setActiveTab(val)
 })
 const cachedViews = computed(() => tabsStore.cachedViews)
 
@@ -122,72 +161,9 @@ const userRole = computed(() => {
 const userAvatar = computed(() => {
   const avatar = userStore.userInfo?.avatar
   if (!avatar) return ''
-  // 如果已经是 data URI 格式，直接返回
   if (avatar.startsWith('data:')) return avatar
-  // 否则添加 base64 前缀
   return `data:image/png;base64,${avatar}`
 })
-
-const menuItems = [
-  {
-    key: 'console_group',
-    type: 'group',
-    label: '控制台',
-    children: [
-      {
-        key: '/home',
-        icon: h('img', { src: new URL('@/assets/svgs/home.svg', import.meta.url).href }),
-        label: '首页',
-        title: '首页'
-      },
-    ]
-  },
-  {
-    key: 'device-group',
-    type: 'group',
-    label: '设备管理',
-    children: [
-      {
-        key: '/platform',
-        icon: h('img', { src: new URL('@/assets/svgs/gb28181.svg', import.meta.url).href }),
-        label: '平台管理',
-        title: '平台管理'
-      },
-      {
-        key: '/devices',
-        icon: h('img', { src: new URL('@/assets/svgs/device.svg', import.meta.url).href }),
-        label: '监控管理',
-        title: '监控管理'
-      }
-    ]
-  },
-  {
-    key: 'stream-group',
-    type: 'group',
-    label: '流媒体管理',
-    children: [
-      {
-        key: '/streams',
-        icon: h('img', { src: new URL('@/assets/svgs/stream.svg', import.meta.url).href }),
-        label: '流管理',
-        title: '流管理'
-      }
-    ]
-  },
-  {
-    key: 'system-group',
-    type: 'group',
-    label: '系统管理',
-    children: [
-      {
-        key: '/settings',
-        icon: h('img', { src: new URL('@/assets/svgs/settings.svg', import.meta.url).href }),
-        label: '系统设置',
-        title: '系统设置'
-      }
-    ]
-  }
-]
 
 // 点击菜单
 const handleMenuClick = ({ key }) => {
@@ -204,12 +180,12 @@ const handleMenuClick = ({ key }) => {
 }
 
 // Tab 切换
-const onTabChange = (path) => {
+const onTabChange = path => {
   router.push(path)
 }
 
 // tabs 双击事件处理
-const onTabsDblClick = (e) => {
+const onTabsDblClick = e => {
   const tab = e.target.closest('.ant-tabs-tab')
   if (!tab) return
   // 通过 tab 在 DOM 中的位置找到对应的 path
@@ -234,7 +210,7 @@ const handleLogout = async () => {
 // 路由变化时自动添加 tab
 watch(
   () => route.path,
-  (path) => {
+  path => {
     if (path === '/login') return
     // 只在已恢复状态后才添加 tab，避免覆盖 activeTab
     if (!tabsStore.restored) return
@@ -263,6 +239,8 @@ onMounted(() => {
 </script>
 
 <style lang="less" scoped>
+@import '@/styles/mixins.less';
+
 .layout {
   height: 100vh;
   overflow: hidden;
@@ -320,9 +298,7 @@ onMounted(() => {
       color: inherit;
       background-color: #00000010;
     }
-
   }
-
 }
 
 .main-layout {
@@ -403,17 +379,15 @@ onMounted(() => {
         background: #f5f5f5;
       }
 
-      :deep(.ant-avatar) {
-        background: #f5f5f5;
-        border: 2px solid #e8e8e8;
-        flex-shrink: 0;
+      .user-avatar {
+        .user-avatar-style(32px);
       }
 
       .user-details {
         display: flex;
         flex-direction: column;
         line-height: 1;
-        gap: 2px;
+        gap: 4px;
 
         .user-name {
           font-size: 14px;

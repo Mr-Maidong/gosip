@@ -5,7 +5,7 @@ import request from './request'
  */
 export function getStreams(params) {
   return request({
-    url: '/streams',
+    url: '/v1/streams',
     method: 'get',
     params
   })

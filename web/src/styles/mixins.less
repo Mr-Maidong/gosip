@@ -72,3 +72,16 @@
 .shadow-lg() {
   box-shadow: @shadow-lg;
 }
+
+// 用户头像样式 Mixin
+.user-avatar-style(@size: 48px, @bg-color: @bg-color-layout) {
+  width: @size;
+  height: @size;
+  background: @bg-color;
+  border: 2px solid #e8e8e8;
+  flex-shrink: 0;
+
+  .ant-avatar-string {
+    font-size: @size * 0.4;
+  }
+}
