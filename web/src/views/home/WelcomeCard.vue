@@ -15,30 +15,29 @@
           </span>
         </div>
       </div>
+      <div class="quick-actions">
+        <a-button type="primary" @click="$router.push('/devices')"> 添加设备 </a-button>
+        <a-button @click="$router.push('/streams')"> 查看流 </a-button>
+        <a-button @click="$router.push('/settings')"> 系统设置 </a-button>
+      </div>
     </div>
 
     <div class="card-body">
       <div class="stats-row">
-        <div class="stat-item" @click="$router.push('/platform')">
-          <span class="stat-value">{{ stats.platform }}</span>
-          <span class="stat-label">平台</span>
-        </div>
-        <div class="stat-divider" />
         <div class="stat-item" @click="$router.push('/devices')">
           <span class="stat-value">{{ stats.devices }}</span>
           <span class="stat-label">设备</span>
+        </div>
+        <div class="stat-divider" />
+        <div class="stat-item" @click="$router.push('/devices')">
+          <span class="stat-value">{{ stats.channels }}</span>
+          <span class="stat-label">通道</span>
         </div>
         <div class="stat-divider" />
         <div class="stat-item" @click="$router.push('/streams')">
           <span class="stat-value">{{ stats.streams }}</span>
           <span class="stat-label">在线流</span>
         </div>
-      </div>
-
-      <div class="quick-actions">
-        <a-button type="primary" @click="$router.push('/devices')"> 添加设备 </a-button>
-        <a-button @click="$router.push('/streams')"> 查看流 </a-button>
-        <a-button @click="$router.push('/settings')"> 系统设置 </a-button>
       </div>
     </div>
   </div>
@@ -62,7 +61,7 @@ const userAvatar = computed(() => {
 })
 
 const stats = ref({
-  platform: 0,
+  channels: 0,
   devices: 0,
   streams: 0
 })
@@ -98,9 +97,9 @@ const fetchStats = async () => {
   try {
     const [devicesRes, channelsRes, streamsRes] = await Promise.all([getDevices({ limit: 1 }), getChannels({ limit: 1 }), getStreams({ limit: 1 })])
     stats.value = {
-      platform: channelsRes.total || 0,
-      devices: devicesRes.total || 0,
-      streams: streamsRes.total || 0
+      channels: channelsRes.data?.total || 0,
+      devices: devicesRes.data?.total || 0,
+      streams: streamsRes.data?.total || 0
     }
   } catch (error) {
     // error handled by request interceptor
@@ -122,6 +121,9 @@ onMounted(() => {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 
   .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 24px;
 
     .user-info {
@@ -159,16 +161,25 @@ onMounted(() => {
         }
       }
     }
+
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+
+      :deep(.ant-btn) {
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 13px;
+      }
+    }
   }
 
   .card-body {
     .stats-row {
       display: flex;
       align-items: center;
-      padding: 20px 0;
-      margin-bottom: 20px;
+      padding: 16px 0;
       border-top: 1px solid #f0f0f0;
-      border-bottom: 1px solid #f0f0f0;
 
       .stat-item {
         flex: 1;
@@ -185,7 +196,7 @@ onMounted(() => {
         }
 
         .stat-value {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 600;
           color: #1890ff;
           line-height: 1.2;
@@ -200,26 +211,32 @@ onMounted(() => {
 
       .stat-divider {
         width: 1px;
-        height: 40px;
+        height: 32px;
         background: #e8e8e8;
-      }
-    }
-
-    .quick-actions {
-      display: flex;
-      gap: 12px;
-
-      :deep(.ant-btn) {
-        border-radius: 4px;
-        font-weight: 500;
       }
     }
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .welcome-card {
     padding: 20px;
+
+    .card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+
+      .quick-actions {
+        width: 100%;
+        flex-wrap: wrap;
+
+        :deep(.ant-btn) {
+          flex: 1;
+          min-width: 90px;
+        }
+      }
+    }
 
     .card-body {
       .stats-row {
@@ -232,15 +249,6 @@ onMounted(() => {
 
         .stat-divider {
           display: none;
-        }
-      }
-
-      .quick-actions {
-        flex-wrap: wrap;
-
-        :deep(.ant-btn) {
-          flex: 1;
-          min-width: 100px;
         }
       }
     }
