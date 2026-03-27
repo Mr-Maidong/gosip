@@ -130,6 +130,21 @@ main.go → api.Init() + sipapi.Start()
          db/ (GORM)          m/ (config)
          ├── gorm.go         ├── config.go, m.go
          └── tx.go           utils/
+                                └── ...
+```
+
+### Frontend Structure
+```
+web/src/
+├── components/    # 共享组件
+├── views/        # 页面组件 (home, platform, devices, streams, settings)
+│   └── home/     # 首页模块
+│       ├── index.vue       # 首页入口
+│       └── WelcomeCard.vue # 欢迎卡片组件
+├── api/          # API 请求模块
+├── store/        # Pinia 状态管理
+├── router/       # Vue Router 配置
+└── styles/       # LESS 样式 (variables.less, mixins.less)
 ```
 
 ### Key Directories
@@ -144,6 +159,9 @@ main.go → api.Init() + sipapi.Start()
 | `db/` | GORM + transactions |
 | `m/` | Config, constants |
 | `web/src/` | Vue 3 frontend |
+| `web/src/components/` | 共享组件 |
+| `web/src/views/` | 页面组件 |
+| `web/src/views/home/` | 首页模块 (index.vue + WelcomeCard.vue) |
 
 ---
 
@@ -156,11 +174,24 @@ All routes use `/api/v1/` prefix:
 | GET | `/api/v1/health` | Health check (no auth) |
 | POST | `/api/v1/login` | Login |
 | GET/POST | `/api/v1/users` | User management |
-| GET/POST | `/api/v1/devices` | Device management |
-| GET/POST | `/api/v1/channels` | Channel management |
+| GET/POST | `/api/v1/devices` | Device/监控管理 |
+| GET/POST | `/api/v1/platform` | Platform/平台管理 (级联平台) |
+| GET/POST | `/api/v1/channels` | Channel statistics only (前端无独立页面) |
 | POST | `/api/v1/channels/:id/streams` | Start/stop streaming |
 | GET | `/api/v1/channels/:id/records` | Recording playback |
 | GET/POST | `/api/v1/roles`, `/api/v1/permissions` | RBAC |
+
+## Frontend Pages
+
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/home` | home/index.vue | 首页欢迎卡片 + WelcomeCard 组件 |
+| `/platform` | platform/index.vue | 级联平台管理 |
+| `/devices` | devices/index.vue | 监控设备管理 |
+| `/streams` | streams/index.vue | 流管理 |
+| `/settings` | settings/index.vue | 系统设置 |
+
+**Note**: 通道(Channel)前端无独立管理页面，仅在首页统计中展示通道总数。
 
 ---
 
