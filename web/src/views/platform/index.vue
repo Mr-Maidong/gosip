@@ -1,7 +1,7 @@
 <template>
-  <div class="channels-container">
-    <h2>通道管理</h2>
-    <p>通道列表内容</p>
+  <div class="platform-container">
+    <h2>平台管理</h2>
+    <p>平台列表内容</p>
   </div>
 </template>
 
@@ -10,7 +10,7 @@
 </script>
 
 <style lang="less" scoped>
-.channels-container {
+.platform-container {
   padding: 24px;
 }
 </style>
