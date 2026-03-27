@@ -1,9 +1,7 @@
 <template>
   <div class="streams-container">
     <div class="page-header">
-      <h2>流管理</h2>
-      <a-space>
-        <a-button type="primary" @click="fetchStreams"> 刷新 </a-button>
+      <a-space :size="16">
         <a-button-group>
           <a-button :type="batchMode ? 'primary' : 'default'" @click="toggleBatchMode">
             {{ batchMode ? '取消批量' : '批量操作' }}
@@ -19,10 +17,26 @@
             </template>
           </a-dropdown>
         </a-button-group>
+        <a-button @click="fetchStreams"> 刷新 </a-button>
       </a-space>
     </div>
 
-    <a-table :columns="columns" :data-source="streams" :loading="loading" :pagination="pagination" :scroll="{ y: 622 }" :row-selection="batchMode ? { selectedRowKeys, onChange: handleSelectionChange } : null" :row-key="record => record.id" @change="handleTableChange">
+    <a-table
+      :columns="columns"
+      :data-source="streams"
+      :loading="loading"
+      :pagination="pagination"
+      :scroll="{ y: 622 }"
+      :row-selection="{
+        selectedRowKeys,
+        onChange: handleSelectionChange,
+        getCheckboxProps: () => ({
+          disabled: !batchMode
+        })
+      }"
+      :row-key="record => record.id"
+      @change="handleTableChange"
+    >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <a-tag :color="getStatusColor(record.status)">
@@ -37,27 +51,21 @@
         <template v-else-if="column.key === 'type'">
           <a-space direction="vertical" :size="0">
             <span>{{ record.t === 0 ? '直播' : '回放' }}</span>
-            <span class="type-sub">{{ record.streamtype === 'pull' ? '拉流' : '推流' }}</span>
           </a-space>
         </template>
         <template v-else-if="column.key === 'streamid'">
           <span class="stream-id">{{ record.streamid || '-' }}</span>
         </template>
         <template v-else-if="column.key === 'address'">
-          <a-space direction="vertical" :size="2" class="address-list">
+          <a-space direction="vertical" :size="0" class="address-list">
             <span v-if="record.rtmp" class="address-item">
               <span class="address-label">RTMP:</span>
-              <a :href="record.rtmp" target="_blank" class="address-link">{{ truncate(record.rtmp, 30) }}</a>
-            </span>
-            <span v-if="record.wsflv" class="address-item">
-              <span class="address-label">WS-FLV:</span>
-              <a :href="record.wsflv" target="_blank" class="address-link">{{ truncate(record.wsflv, 30) }}</a>
+              <a-button type="link" class="address-link">{{ truncate(record.rtmp, 40) }}</a-button>
             </span>
           </a-space>
         </template>
         <template v-else-if="column.key === 'time'">
           <a-space direction="vertical" :size="2">
-            <span>添加: {{ formatTime(record.addtime) }}</span>
             <span>更新: {{ formatTime(record.uptime) }}</span>
           </a-space>
         </template>
@@ -94,10 +102,45 @@ const pagination = reactive({
 
 const columns = computed(() => [
   {
+    title: '设备ID',
+    dataIndex: 'deviceid',
+    key: 'deviceid',
+    width: 160,
+    ellipsis: true
+  },
+  {
+    title: '通道ID',
+    dataIndex: 'channelid',
+    key: 'channelid',
+    width: 160,
+    ellipsis: true
+  },
+  {
+    title: '流ID',
+    key: 'streamid',
+    width: 120,
+    ellipsis: true
+  },
+  {
+    title: 'ZLM流',
+    key: 'stream',
+    width: 68
+  },
+  {
+    title: '类型',
+    key: 'type',
+    width: 60
+  },
+  {
+    title: '播放地址',
+    key: 'address',
+    width: 300,
+    ellipsis: true
+  },
+  {
     title: '状态',
     key: 'status',
-    width: 90,
-    fixed: 'left',
+    width: 72,
     filters: [
       { text: '正常', value: 0 },
       { text: '关闭', value: 1 },
@@ -106,41 +149,6 @@ const columns = computed(() => [
     filterMultiple: false,
     filteredValue: statusFilter.value !== null ? [statusFilter.value] : null,
     onFilter: (value, record) => record.status === value
-  },
-  {
-    title: 'ZLM流',
-    key: 'stream',
-    width: 90
-  },
-  {
-    title: '类型',
-    key: 'type',
-    width: 90
-  },
-  {
-    title: '设备ID',
-    dataIndex: 'deviceid',
-    key: 'deviceid',
-    width: 180,
-    ellipsis: true
-  },
-  {
-    title: '通道ID',
-    dataIndex: 'channelid',
-    key: 'channelid',
-    width: 180,
-    ellipsis: true
-  },
-  {
-    title: '流ID',
-    key: 'streamid',
-    width: 150,
-    ellipsis: true
-  },
-  {
-    title: '播放地址',
-    key: 'address',
-    width: 220
   },
   {
     title: '时间信息',
@@ -298,15 +306,9 @@ onMounted(() => {
 
   .page-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: start;
     align-items: center;
     margin-bottom: 24px;
-
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
   }
 
   .selection-info {
@@ -335,28 +337,8 @@ onMounted(() => {
     font-size: 12px;
   }
 
-  .address-list {
-    max-width: 260px;
-  }
-
-  .address-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    line-height: 1.4;
-  }
-
   .address-label {
     color: #8c8c8c;
-    flex-shrink: 0;
-  }
-
-  .address-link {
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 </style>
