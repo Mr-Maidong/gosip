@@ -30,21 +30,24 @@ request.interceptors.response.use(
     // 处理业务错误（code 不为 0 表示失败）
     if (res.code != 0) {
       message.error(res.msg || '请求失败')
-      // 认证错误，清除 token 并跳转到登录页
-      if (res.code === 1004) {
-        const userStore = useUserStore()
-        userStore.logout()
-        localStorage.removeItem('token')
-        localStorage.removeItem('userInfo')
-        window.location.href = '/login'
-      }
       return Promise.reject(new Error(res.msg || '请求失败'))
     }
     return res
   },
   error => {
-    message.error(error.message || '请求失败')
-    return Promise.reject(error)
+    const res = error.response?.data
+    const errMsg = `${res?.code}: ${res?.data}` || error.message || '请求失败'
+    message.error(errMsg)
+    if (res?.code === 1004) {
+      const userStore = useUserStore()
+      userStore.logout()
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      window.location.href = '/login'
+    }
+    const err = new Error(errMsg)
+    err.code = res?.code
+    return Promise.reject(err)
   }
 )
 

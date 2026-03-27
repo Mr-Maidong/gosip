@@ -12,11 +12,11 @@ export function getStreams(params) {
 }
 
 /**
- * 开始播放
+ * 开始播放（直播/回放）
  */
 export function startStream(channelId, data) {
   return request({
-    url: `/channels/${channelId}/streams`,
+    url: `/v1/channels/${channelId}/streams`,
     method: 'post',
     data
   })
@@ -27,7 +27,7 @@ export function startStream(channelId, data) {
  */
 export function stopStream(id) {
   return request({
-    url: `/streams/${id}`,
+    url: `/v1/streams/${id}`,
     method: 'delete'
   })
 }
