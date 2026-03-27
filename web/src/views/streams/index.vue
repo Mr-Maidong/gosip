@@ -4,10 +4,25 @@
       <h2>流管理</h2>
       <a-space>
         <a-button type="primary" @click="fetchStreams"> 刷新 </a-button>
+        <a-button-group>
+          <a-button :type="batchMode ? 'primary' : 'default'" @click="toggleBatchMode">
+            {{ batchMode ? '取消批量' : '批量操作' }}
+          </a-button>
+          <a-dropdown trigger="click" :disabled="!batchMode || selectedRowKeys.length === 0">
+            <a-button :type="batchMode ? 'primary' : 'default'" :disabled="!batchMode || selectedRowKeys.length === 0">
+              <DownOutlined />
+            </a-button>
+            <template #overlay>
+              <a-menu @click="handleBatchAction">
+                <a-menu-item key="stop"> 批量停止 </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+        </a-button-group>
       </a-space>
     </div>
 
-    <a-table :columns="columns" :data-source="streams" :loading="loading" :pagination="pagination" :scroll="{ y: 622 }" row-key="id" @change="handleTableChange">
+    <a-table :columns="columns" :data-source="streams" :loading="loading" :pagination="pagination" :scroll="{ y: 622 }" :row-selection="batchMode ? { selectedRowKeys, onChange: handleSelectionChange } : null" :row-key="record => record.id" @change="handleTableChange">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <a-tag :color="getStatusColor(record.status)">
@@ -47,7 +62,7 @@
           </a-space>
         </template>
         <template v-else-if="column.key === 'action'">
-          <a-button type="link" danger size="small" :loading="record.stopping" @click="handleStop(record)"> 停止 </a-button>
+          <a-button type="link" danger size="small" :loading="record.stopping" :disabled="record.status === 1" @click="handleStop(record)"> 停止 </a-button>
         </template>
       </template>
     </a-table>
@@ -55,12 +70,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { getStreams, stopStream } from '@/api/stream'
 import { message } from 'ant-design-vue'
+import { DownOutlined } from '@ant-design/icons-vue'
 
 const streams = ref([])
 const loading = ref(false)
+const batchMode = ref(false)
+const selectedRowKeys = ref([])
+const batchStopping = ref(false)
+
+const statusFilter = ref(0)
 
 const pagination = reactive({
   current: 1,
@@ -71,12 +92,20 @@ const pagination = reactive({
   showTotal: total => `共 ${total} 条`
 })
 
-const columns = [
+const columns = computed(() => [
   {
     title: '状态',
     key: 'status',
     width: 90,
-    fixed: 'left'
+    fixed: 'left',
+    filters: [
+      { text: '正常', value: 0 },
+      { text: '关闭', value: 1 },
+      { text: '未开始', value: -1 }
+    ],
+    filterMultiple: false,
+    filteredValue: statusFilter.value !== null ? [statusFilter.value] : null,
+    onFilter: (value, record) => record.status === value
   },
   {
     title: 'ZLM流',
@@ -124,7 +153,7 @@ const columns = [
     width: 80,
     fixed: 'right'
   }
-]
+])
 
 const getStatusColor = status => {
   const colorMap = { 0: 'success', 1: 'error', '-1': 'warning' }
@@ -154,6 +183,10 @@ const fetchStreams = async () => {
       limit: pagination.pageSize,
       skip: (pagination.current - 1) * pagination.pageSize
     }
+    if (statusFilter.value !== null) {
+      const filters = [{ field_name: 'status', opertator: '=', value: statusFilter.value }]
+      params.filters = JSON.stringify(filters)
+    }
     const res = await getStreams(params)
     streams.value = (res.data?.list || []).map(item => ({ ...item, stopping: false }))
     pagination.total = res.data?.total || 0
@@ -164,10 +197,33 @@ const fetchStreams = async () => {
   }
 }
 
-const handleTableChange = pag => {
+watch(statusFilter, () => {
+  pagination.current = 1
+  fetchStreams()
+})
+
+const handleTableChange = (pag, filters) => {
   pagination.current = pag.current
   pagination.pageSize = pag.pageSize
+  if (filters.status && filters.status.length > 0) {
+    statusFilter.value = filters.status[0]
+  }
   fetchStreams()
+}
+
+const handleSelectionChange = keys => {
+  selectedRowKeys.value = keys
+}
+
+const clearSelection = () => {
+  selectedRowKeys.value = []
+}
+
+const toggleBatchMode = () => {
+  batchMode.value = !batchMode.value
+  if (!batchMode.value) {
+    selectedRowKeys.value = []
+  }
 }
 
 const handleStop = async record => {
@@ -189,6 +245,43 @@ const handleStop = async record => {
   } finally {
     record.stopping = false
   }
+}
+
+const handleBatchAction = async ({ key }) => {
+  if (key === 'stop') {
+    handleBatchStop()
+  }
+}
+
+const handleBatchStop = async () => {
+  const selectedStreams = streams.value.filter(s => selectedRowKeys.value.includes(s.id))
+  if (selectedStreams.length === 0) {
+    message.warning('请先选择流')
+    return
+  }
+  batchStopping.value = true
+  let successCount = 0
+  let failCount = 0
+  for (const stream of selectedStreams) {
+    try {
+      await stopStream(stream.streamid)
+      successCount++
+    } catch (error) {
+      if (error.code === 1002) {
+        successCount++
+      } else {
+        failCount++
+      }
+    }
+  }
+  batchStopping.value = false
+  selectedRowKeys.value = []
+  if (failCount === 0) {
+    message.success(`已停止 ${successCount} 个流`)
+  } else {
+    message.warning(`停止 ${successCount} 个流，失败 ${failCount} 个`)
+  }
+  fetchStreams()
 }
 
 onMounted(() => {
@@ -213,6 +306,22 @@ onMounted(() => {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
+    }
+  }
+
+  .selection-info {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+
+    a {
+      color: #1890ff;
+      cursor: pointer;
     }
   }
 
