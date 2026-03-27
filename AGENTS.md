@@ -8,6 +8,11 @@ GoSIP (now YSIP) is a GB28181 SIP server for video surveillance systems. It work
 - **Go Server**: GB28181 SIP protocol with Gin HTTP API
 - **Web Frontend**: Vue 3 + Vite + Ant Design Vue + Pinia
 
+
+## Development
+- 当用户要开发前端页面时使用 vue skill
+- 当用户要开发后台时使用 golang skill
+
 ---
 
 ## Build Commands
