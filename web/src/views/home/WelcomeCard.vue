@@ -95,7 +95,8 @@ const currentDate = computed(() => {
 
 const fetchStats = async () => {
   try {
-    const [devicesRes, channelsRes, streamsRes] = await Promise.all([getDevices({ limit: 1 }), getChannels({ limit: 1 }), getStreams({ limit: 1 })])
+    const streamsParams = { limit: 1, filters: JSON.stringify([{ field_name: 'status', opertator: '=', value: 0 }]) }
+    const [devicesRes, channelsRes, streamsRes] = await Promise.all([getDevices({ limit: 1 }), getChannels({ limit: 1 }), getStreams(streamsParams)])
     stats.value = {
       channels: channelsRes.data?.total || 0,
       devices: devicesRes.data?.total || 0,
@@ -187,7 +188,8 @@ onMounted(() => {
         flex-direction: column;
         align-items: center;
         cursor: pointer;
-        padding: 8px 16px;
+        padding: 6px;
+        margin: 0px 16px;
         border-radius: 6px;
         transition: background 0.2s;
 

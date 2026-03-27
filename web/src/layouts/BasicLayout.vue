@@ -337,7 +337,7 @@ onMounted(() => {
           border: none !important;
           background: transparent;
           padding: 4px 12px;
-          margin: 0 4 0 0;
+          margin: 0 6px 0 0;
           font-size: 13px;
           color: #666;
           border-radius: 4px;
