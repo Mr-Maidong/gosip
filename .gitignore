@@ -3,4 +3,6 @@ srv
 .idea
 gosip
 node_modules
-*.log.opencode/
+*.log
+.opencode/
+logs/
