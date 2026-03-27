@@ -74,7 +74,19 @@ func Play(c *gin.Context) {
 func Stop(c *gin.Context) {
 	streamid := c.Param("id")
 	if _, ok := sipapi.StreamList.Response.Load(streamid); !ok {
-		m.JsonResponse(c, m.StatusParamsERR, "视频流不存在或已关闭")
+		stream := sipapi.Streams{StreamID: streamid}
+		if err := db.Get(db.DBClient, &stream); err != nil || stream.ID == 0 {
+			m.JsonResponse(c, m.StatusParamsERR, "视频流不存在或已关闭")
+			return
+		}
+		if stream.Status == 1 || stream.Stop {
+			m.JsonResponse(c, m.StatusSucc, "")
+			return
+		}
+		stream.Status = 1
+		stream.Stop = true
+		db.Save(db.DBClient, &stream)
+		m.JsonResponse(c, m.StatusSucc, "")
 		return
 	}
 	sipapi.SipStopPlay(streamid)

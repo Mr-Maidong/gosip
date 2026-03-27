@@ -113,10 +113,18 @@ func CheckStreams() {
 			logrus.Debugln("checkStreamActiveDevice", stream.StreamID, stream.DeviceID)
 			device, ok := _activeDevices.Get(stream.DeviceID)
 			if !ok {
+				stream.Status = 1
+				stream.Stop = true
+				stream.Msg = "设备不在线"
+				db.Save(db.DBClient, stream)
 				continue
 			}
 			if device.source == nil {
 				logrus.Warningln("checkStreamDeviceSource is nil", stream.StreamID, stream.DeviceID)
+				stream.Status = 1
+				stream.Stop = true
+				stream.Msg = "设备连接已断开"
+				db.Save(db.DBClient, stream)
 				continue
 			}
 			logrus.Debugln("checkStreamClosed", stream.StreamID, stream.DeviceID)
@@ -158,24 +166,30 @@ func CheckStreams() {
 			if err != nil {
 				logrus.Warningln("checkStreamClosedFail", stream.StreamID, err)
 				stream.Msg = err.Error()
+				stream.Status = 1
+				stream.Stop = true
 				db.Save(db.DBClient, stream)
 				continue
 			}
 			response := tx.GetResponse()
 			if response == nil {
 				logrus.Warningln("checkStreamClosedFail response is nil", channel.ChannelID, channel.DeviceID, stream.StreamID)
+				stream.Status = 1
+				stream.Stop = true
+				stream.Msg = "关闭请求无响应"
+				db.Save(db.DBClient, stream)
 				continue
 			}
 			if response.StatusCode() != http.StatusOK {
 				if response.StatusCode() == 481 {
 					logrus.Infoln("checkStreamClosedFail1", stream.StreamID, response.StatusCode())
 					stream.Msg = response.Reason()
-					stream.Status = 1
-					stream.Stop = true
 				} else {
 					logrus.Warningln("checkStreamClosedFail1", stream.StreamID, response.StatusCode())
 					stream.Msg = response.Reason()
 				}
+				stream.Status = 1
+				stream.Stop = true
 			} else {
 				stream.Status = 1
 				stream.Stop = true
