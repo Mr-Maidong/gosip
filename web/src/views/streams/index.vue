@@ -1,24 +1,38 @@
 <template>
   <div class="streams-container">
-    <div class="page-header">
-      <a-space :size="16">
+    <div class="streams-header">
+      <div class="header-left">
         <a-button-group>
-          <a-button :type="batchMode ? 'primary' : 'default'" @click="toggleBatchMode">
-            {{ batchMode ? '取消批量' : '批量操作' }}
+          <a-button :type="batchMode ? 'primary' : 'default'" @click="toggleBatchMode" :disabled="streams.length === 0">
+            <template #icon>
+              <StopOutlined v-if="batchMode" />
+              <BorderOutlined v-else />
+            </template>
+            {{ batchMode ? '退出批量' : '批量操作' }}
           </a-button>
-          <a-dropdown trigger="click" :disabled="!batchMode || selectedRowKeys.length === 0">
+          <a-dropdown :disabled="!batchMode || selectedRowKeys.length === 0" trigger="click">
             <a-button :type="batchMode ? 'primary' : 'default'" :disabled="!batchMode || selectedRowKeys.length === 0">
-              <DownOutlined />
+              <template #icon>
+                <DownOutlined />
+              </template>
             </a-button>
             <template #overlay>
               <a-menu @click="handleBatchAction">
-                <a-menu-item key="stop"> 批量停止 </a-menu-item>
+                <a-menu-item key="stop"> <StopOutlined /> 批量停止 </a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
         </a-button-group>
-        <a-button @click="fetchStreams"> 刷新 </a-button>
-      </a-space>
+        <span v-if="batchMode && selectedRowKeys.length > 0" class="selection-tip"> 已选择 {{ selectedRowKeys.length }} 项 </span>
+      </div>
+      <div class="header-right">
+        <a-button @click="fetchStreams">
+          <template #icon>
+            <ReloadOutlined />
+          </template>
+          刷新
+        </a-button>
+      </div>
     </div>
 
     <a-table
@@ -26,48 +40,48 @@
       :data-source="streams"
       :loading="loading"
       :pagination="pagination"
-      :scroll="{ y: 622 }"
+      :scroll="{ y: `calc(100vh - 334px)` }"
       :row-selection="{
         selectedRowKeys,
         onChange: handleSelectionChange,
-        getCheckboxProps: () => ({
-          disabled: !batchMode
-        })
+        getCheckboxProps: () => ({ disabled: !batchMode })
       }"
       :row-key="record => record.id"
+      class="streams-table"
       @change="handleTableChange"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'status'">
-          <a-tag :color="getStatusColor(record.status)">
-            {{ getStatusText(record.status) }}
-          </a-tag>
+        <template v-if="column.key === 'streamid'">
+          <span class="stream-id-cell">
+            <span class="stream-id-text">{{ record.streamid || '-' }}</span>
+          </span>
+        </template>
+        <template v-else-if="column.key === 'status'">
+          <a-badge :status="getStatusBadge(record.status)" :text="getStatusText(record.status)" />
         </template>
         <template v-else-if="column.key === 'stream'">
-          <a-tag :color="record.stream ? 'success' : 'default'">
+          <a-tag :color="record.stream ? 'success' : 'default'" class="stream-tag">
             {{ record.stream ? '已接收' : '未接收' }}
           </a-tag>
         </template>
         <template v-else-if="column.key === 'type'">
-          <a-space direction="vertical" :size="0">
-            <span>{{ record.t === 0 ? '直播' : '回放' }}</span>
-          </a-space>
-        </template>
-        <template v-else-if="column.key === 'streamid'">
-          <span class="stream-id">{{ record.streamid || '-' }}</span>
+          <span class="type-cell">
+            <PlayCircleOutlined v-if="record.t === 0" class="type-icon live" />
+            <HistoryOutlined v-else class="type-icon replay" />
+            {{ record.t === 0 ? '直播' : '回放' }}
+          </span>
         </template>
         <template v-else-if="column.key === 'address'">
-          <a-space direction="vertical" :size="0" class="address-list">
-            <span v-if="record.rtmp" class="address-item">
-              <span class="address-label">RTMP:</span>
-              <a-button type="link" class="address-link">{{ truncate(record.rtmp, 40) }}</a-button>
-            </span>
-          </a-space>
+          <div class="address-cell">
+            <div v-if="record.rtmp" class="address-item">
+              <span class="address-text">{{ record.rtmp }}</span>
+            </div>
+          </div>
         </template>
         <template v-else-if="column.key === 'time'">
-          <a-space direction="vertical" :size="2">
-            <span>更新: {{ formatTime(record.uptime) }}</span>
-          </a-space>
+          <span class="time-cell">
+            {{ formatTime(record.uptime) }}
+          </span>
         </template>
         <template v-else-if="column.key === 'action'">
           <a-button type="link" danger size="small" :loading="record.stopping" :disabled="record.status === 1" @click="handleStop(record)"> 停止 </a-button>
@@ -81,7 +95,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { getStreams, stopStream } from '@/api/stream'
 import { message } from 'ant-design-vue'
-import { DownOutlined } from '@ant-design/icons-vue'
+import { DownOutlined, ReloadOutlined, BorderOutlined, StopOutlined, PlayCircleOutlined, HistoryOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
 
 const streams = ref([])
 const loading = ref(false)
@@ -102,45 +116,43 @@ const pagination = reactive({
 
 const columns = computed(() => [
   {
-    title: '设备ID',
-    dataIndex: 'deviceid',
-    key: 'deviceid',
-    width: 160,
-    ellipsis: true
-  },
-  {
-    title: '通道ID',
-    dataIndex: 'channelid',
-    key: 'channelid',
-    width: 160,
-    ellipsis: true
-  },
-  {
     title: '流ID',
     key: 'streamid',
-    width: 120,
+    width: 140,
     ellipsis: true
   },
   {
-    title: 'ZLM流',
-    key: 'stream',
-    width: 68
+    title: '设备 / 通道',
+    key: 'device',
+    width: 280,
+    ellipsis: true,
+    customRender: ({ record }) => `${record.deviceid} / ${record.channelid}`
   },
   {
     title: '类型',
     key: 'type',
-    width: 60
+    width: 90
+  },
+  {
+    title: 'ZLM流',
+    key: 'stream',
+    width: 80
   },
   {
     title: '播放地址',
     key: 'address',
-    width: 300,
+    width: 280,
     ellipsis: true
+  },
+  {
+    title: '更新时间',
+    key: 'time',
+    width: 150
   },
   {
     title: '状态',
     key: 'status',
-    width: 72,
+    width: 90,
     filters: [
       { text: '正常', value: 0 },
       { text: '关闭', value: 1 },
@@ -151,11 +163,6 @@ const columns = computed(() => [
     onFilter: (value, record) => record.status === value
   },
   {
-    title: '时间信息',
-    key: 'time',
-    width: 160
-  },
-  {
     title: '操作',
     key: 'action',
     width: 80,
@@ -163,9 +170,9 @@ const columns = computed(() => [
   }
 ])
 
-const getStatusColor = status => {
-  const colorMap = { 0: 'success', 1: 'error', '-1': 'warning' }
-  return colorMap[String(status)] || 'default'
+const getStatusBadge = status => {
+  const map = { 0: 'success', 1: 'error', '-1': 'warning' }
+  return map[String(status)] || 'default'
 }
 
 const getStatusText = status => {
@@ -221,10 +228,6 @@ const handleTableChange = (pag, filters) => {
 
 const handleSelectionChange = keys => {
   selectedRowKeys.value = keys
-}
-
-const clearSelection = () => {
-  selectedRowKeys.value = []
 }
 
 const toggleBatchMode = () => {
@@ -299,45 +302,101 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .streams-container {
-  margin: 18px 18px 0;
-  padding: 16px 16px 0;
+  margin: 16px 16px 0;
+  padding: 16px;
   background: #fff;
   border-radius: 8px;
+  overflow: hidden;
 
-  .page-header {
+  .streams-header {
     display: flex;
-    justify-content: start;
+    justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-  }
+    padding: 0 0 16px 0px;
 
-  .selection-info {
-    margin-bottom: 12px;
-    padding: 8px 12px;
-    background: #f5f5f5;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 13px;
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
 
-    a {
-      color: #1890ff;
-      cursor: pointer;
+      .selection-tip {
+        font-size: 13px;
+        color: #1890ff;
+        font-weight: 500;
+      }
+    }
+
+    .header-right {
+      :deep(.ant-btn) {
+        font-weight: 500;
+      }
     }
   }
 
-  .type-sub {
-    font-size: 12px;
-    color: #8c8c8c;
+  .streams-table {
+    :deep(.ant-table) {
+      .ant-table-thead > tr > th {
+        background: #fafafa;
+        font-weight: 600;
+        font-size: 13px;
+        color: #262626;
+      }
+
+      .ant-table-tbody > tr > td {
+        font-size: 13px;
+      }
+
+      .ant-table-tbody > tr:hover > td {
+        background: #f5f5f5;
+      }
+    }
   }
 
-  .stream-id {
-    font-family: monospace;
-    font-size: 12px;
+  .stream-id-cell {
+    .stream-id-text {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 12px;
+      color: #595959;
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
   }
 
-  .address-label {
+  .stream-tag {
+    border: none;
+    font-weight: 500;
+  }
+
+  .type-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .type-icon {
+      font-size: 14px;
+
+      &.live {
+        color: #52c41a;
+      }
+
+      &.replay {
+        color: #1890ff;
+      }
+    }
+  }
+
+  .address-cell {
+    .address-item {
+      .address-text {
+        font-size: 13px;
+        color: #8c8c8c;
+      }
+    }
+  }
+
+  .time-cell {
+    font-size: 12px;
     color: #8c8c8c;
   }
 }
