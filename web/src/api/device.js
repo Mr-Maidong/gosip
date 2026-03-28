@@ -16,7 +16,7 @@ export function getDevices(params) {
  */
 export function createDevice(data) {
   return request({
-    url: '/devices/create',
+    url: '/v1/devices/create',
     method: 'post',
     data
   })
@@ -27,7 +27,7 @@ export function createDevice(data) {
  */
 export function deleteDevice(id) {
   return request({
-    url: `/devices/${id}`,
+    url: `/v1/devices/${id}`,
     method: 'delete'
   })
 }
@@ -37,7 +37,7 @@ export function deleteDevice(id) {
  */
 export function ptzControl(data) {
   return request({
-    url: '/devices/ptz',
+    url: '/v1/devices/ptz',
     method: 'post',
     data
   })
