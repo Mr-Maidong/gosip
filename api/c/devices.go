@@ -75,16 +75,18 @@ func DevicesCreate(c *gin.Context) {
 // @Summary     设备修改接口
 // @Description 调整设备信息
 // @Tags        devices
-// @Accept      x-www-form-urlencoded
+// @Accept      json
 // @Produce     json
-// @Param       id   path     string true "设备id"
-// @Param       pwd  formData string false "设备密码(GB28181认证密码)"
-// @Param       name formData string false "设备名称"
-// @Success     0    {object} sipapi.Devices
-// @Failure     1000 {object} string
-// @Failure     1001 {object} string
-// @Failure     1002 {object} string
-// @Failure     1003 {object} string
+// @Param       id    path     string true "设备id"
+// @Param       data  body     object false "请求体"
+// @Param       data.name string false "设备名称"
+// @Param       data.pwd  string false "设备密码"
+// @Param       data.host string false "收流地址"
+// @Success     0     {object} sipapi.Devices
+// @Failure     1000  {object} string
+// @Failure     1001  {object} string
+// @Failure     1002  {object} string
+// @Failure     1003  {object} string
 // @Router      /api/v1/devices/{id} [post]
 func DevicesUpdate(c *gin.Context) {
 	deviceid := c.Param("id")
@@ -101,13 +103,24 @@ func DevicesUpdate(c *gin.Context) {
 		return
 	}
 
-	pwd := c.PostForm("pwd")
-	if pwd != "" {
-		device.PWD = pwd
+	var req struct {
+		Name string `json:"name"`
+		PWD  string `json:"pwd"`
+		Host string `json:"host"`
 	}
-	name := c.PostForm("name")
-	if name != "" {
-		device.Name = name
+	if err := c.ShouldBindJSON(&req); err != nil {
+		m.JsonResponse(c, m.StatusParamsERR, "参数错误")
+		return
+	}
+
+	if req.Name != "" {
+		device.Name = req.Name
+	}
+	if req.PWD != "" {
+		device.PWD = req.PWD
+	}
+	if req.Host != "" {
+		device.Host = req.Host
 	}
 	if err := db.Save(db.DBClient, device); err != nil {
 		m.JsonResponse(c, m.StatusDBERR, err)
