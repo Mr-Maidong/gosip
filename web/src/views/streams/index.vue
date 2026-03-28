@@ -3,7 +3,7 @@
     <div class="streams-header">
       <div class="header-left">
         <a-button-group>
-          <a-button :type="batchMode ? 'primary' : 'default'" @click="toggleBatchMode" :disabled="streams.length === 0">
+          <a-button :type="batchMode ? 'primary' : 'default'" :disabled="streams.length === 0" @click="toggleBatchMode">
             <template #icon>
               <StopOutlined v-if="batchMode" />
               <BorderOutlined v-else />
@@ -95,7 +95,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { getStreams, stopStream } from '@/api/stream'
 import { message } from 'ant-design-vue'
-import { DownOutlined, ReloadOutlined, BorderOutlined, StopOutlined, PlayCircleOutlined, HistoryOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
+import { DownOutlined, ReloadOutlined, BorderOutlined, StopOutlined, PlayCircleOutlined, HistoryOutlined } from '@ant-design/icons-vue'
 
 const streams = ref([])
 const loading = ref(false)
@@ -178,11 +178,6 @@ const getStatusBadge = status => {
 const getStatusText = status => {
   const textMap = { 0: '正常', 1: '关闭', '-1': '未开始' }
   return textMap[String(status)] || '未知'
-}
-
-const truncate = (str, len) => {
-  if (!str) return '-'
-  return str.length > len ? str.substring(0, len) + '...' : str
 }
 
 const formatTime = timestamp => {
