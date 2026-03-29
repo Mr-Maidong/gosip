@@ -70,7 +70,9 @@ func PermissionAuth() gin.HandlerFunc {
 func IsWhitePath(path string) bool {
 	whitePaths := []string{
 		"/api/v1/health",
-		"/api/v1/stream/keepalive",
+		"/api/v1/zlm/keepalive",
+		"/api/v1/zlm/change",
+		"/api/v1/zlm/status",
 		"/api/v1/login",
 		"/api/v1/logout",
 		"/zlm/webhook/",

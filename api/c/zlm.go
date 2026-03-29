@@ -270,7 +270,7 @@ type ZLMStreamKeepaliveData struct {
 // @Produce     json
 // @Param       body body ZLMStreamKeepaliveData true "心跳数据"
 // @Success     0    {object} map[string]any
-// @Router      /api/v1/stream/keepalive [post]
+// @Router      /api/v1/zlm/keepalive [post]
 func ZLMStreamKeepalive(c *gin.Context) {
 	body := c.Request.Body
 	defer body.Close()
@@ -312,10 +312,10 @@ type MediaServerStatusResponse struct {
 // MediaServerStatus 获取媒体服务器状态接口
 // @Summary     获取媒体服务器状态
 // @Description 获取 ZLM 媒体服务器的在线状态和配置信息
-// @Tags        media
+// @Tags        zlm
 // @Produce     json
 // @Success     0 {object} MediaServerStatusResponse
-// @Router      /api/v1/media/status [get]
+// @Router      /api/v1/zlm/status [get]
 func MediaServerStatus(c *gin.Context) {
 	status := &MediaServerStatusResponse{
 		MediaServer:   m.MConfig.GB28181.MediaServer,

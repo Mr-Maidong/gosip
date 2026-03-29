@@ -51,8 +51,8 @@ func Init(r *gin.Engine) {
 	}
 	// ZLM 流媒体服务器状态接口
 	{
-		r.POST("/api/v1/stream/keepalive", api.ZLMStreamKeepalive)
-		r.GET("/api/v1/media/status", api.MediaServerStatus)
+		r.POST("/api/v1/zlm/keepalive", api.ZLMStreamKeepalive)
+		r.GET("/api/v1/zlm/status", api.MediaServerStatus)
 	}
 	// 用户类接口
 	{

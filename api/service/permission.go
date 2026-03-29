@@ -440,8 +440,8 @@ func (s *PermissionService) InitDefaultPermissions() error {
 
 		// ZLM 管理
 		{Name: "ZLM 管理", Code: "zlm", Type: "menu", Path: "/zlm", ParentID: 0, Description: "ZLM 管理模块"},
-		{Name: "媒体状态", Code: "zlm:status", Type: "api", Path: "/api/v1/media/status", Method: "GET", ParentID: 0, Description: "媒体服务器状态"},
-		{Name: "流心跳", Code: "zlm:keepalive", Type: "api", Path: "/api/v1/stream/keepalive", Method: "POST", ParentID: 0, Description: "流心跳接口"},
+		{Name: "媒体状态", Code: "zlm:status", Type: "api", Path: "/api/v1/zlm/status", Method: "GET", ParentID: 0, Description: "媒体服务器状态"},
+		{Name: "流心跳", Code: "zlm:keepalive", Type: "api", Path: "/api/v1/zlm/keepalive", Method: "POST", ParentID: 0, Description: "流心跳接口"},
 		{Name: "Webhook", Code: "zlm:webhook", Type: "api", Path: "/zlm/webhook/:method", Method: "POST", ParentID: 0, Description: "ZLM Webhook"},
 	}
 
