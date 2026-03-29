@@ -16,7 +16,7 @@ export function getChannels(params) {
  */
 export function createChannel(deviceId, data) {
   return request({
-    url: `/devices/${deviceId}/channels`,
+    url: `/v1/devices/${deviceId}/channels`,
     method: 'post',
     data
   })
@@ -27,7 +27,7 @@ export function createChannel(deviceId, data) {
  */
 export function getRecords(channelId, params) {
   return request({
-    url: `/channels/${channelId}/records`,
+    url: `/v1/channels/${channelId}/records`,
     method: 'get',
     params
   })

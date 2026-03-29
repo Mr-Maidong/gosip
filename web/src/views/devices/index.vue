@@ -2,37 +2,48 @@
   <div class="devices-container">
     <div class="devices-header">
       <div class="header-left">
-        <a-button-group>
-          <a-button :type="batchMode ? 'primary' : 'default'" @click="toggleBatchMode">
+        <template v-if="mode === 'channels'">
+          <a-button @click="mode = 'devices'">
             <template #icon>
-              <CheckOutlined v-if="batchMode" />
-              <BorderOutlined v-else />
+              <ArrowLeftOutlined />
             </template>
-            {{ batchMode ? '退出批量' : '批量操作' }}
+            返回
           </a-button>
-          <a-dropdown :disabled="!batchMode || selectedRowKeys.length === 0" trigger="click">
-            <a-button :type="batchMode ? 'primary' : 'default'" :disabled="!batchMode || selectedRowKeys.length === 0">
+          <span class="mode-title">{{ currentDevice?.name || currentDevice?.deviceid }} - 通道列表</span>
+        </template>
+        <template v-else>
+          <a-button-group>
+            <a-button :type="batchMode ? 'primary' : 'default'" @click="toggleBatchMode">
               <template #icon>
-                <DownOutlined />
+                <CheckOutlined v-if="batchMode" />
+                <BorderOutlined v-else />
               </template>
+              {{ batchMode ? '退出批量' : '批量操作' }}
             </a-button>
-            <template #overlay>
-              <a-menu @click="handleBatchAction">
-                <a-menu-item key="delete"> <DeleteOutlined /> 批量删除 </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
-        </a-button-group>
-        <span v-if="batchMode && selectedRowKeys.length > 0" class="selection-tip"> 已选择 {{ selectedRowKeys.length }} 项 </span>
+            <a-dropdown :disabled="!batchMode || selectedRowKeys.length === 0" trigger="click">
+              <a-button :type="batchMode ? 'primary' : 'default'" :disabled="!batchMode || selectedRowKeys.length === 0">
+                <template #icon>
+                  <DownOutlined />
+                </template>
+              </a-button>
+              <template #overlay>
+                <a-menu @click="handleBatchAction">
+                  <a-menu-item key="delete"> <DeleteOutlined /> 批量删除 </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
+          </a-button-group>
+          <span v-if="batchMode && selectedRowKeys.length > 0" class="selection-tip"> 已选择 {{ selectedRowKeys.length }} 项 </span>
+        </template>
       </div>
       <div class="header-right">
-        <a-button type="primary" @click="openAddModal">
+        <a-button v-if="mode === 'devices'" type="primary" @click="openAddModal">
           <template #icon>
             <PlusOutlined />
           </template>
           添加设备
         </a-button>
-        <a-button @click="fetchDevices">
+        <a-button @click="refresh">
           <template #icon>
             <ReloadOutlined />
           </template>
@@ -41,20 +52,15 @@
       </div>
     </div>
 
+    <!-- 设备列表 -->
     <a-table
-      :columns="columns"
+      v-if="mode === 'devices'"
+      :columns="deviceColumns"
       :data-source="devices"
       :loading="loading"
       :pagination="pagination"
-      :scroll="{ y: 540 }"
-      :row-selection="
-        batchMode
-          ? {
-              selectedRowKeys,
-              onChange: handleSelectionChange
-            }
-          : null
-      "
+      :scroll="{ y: `calc(100vh - 334px)` }"
+      :row-selection="batchMode ? { selectedRowKeys, onChange: handleSelectionChange } : null"
       :row-key="record => record.id"
       class="devices-table"
       @change="handleTableChange"
@@ -87,8 +93,47 @@
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
+            <a-button type="link" size="small" @click="openChannelsModal(record)"> 通道 </a-button>
             <a-button type="link" size="small" @click="openEditModal(record)"> 编辑 </a-button>
             <a-button type="link" danger size="small" :loading="record.deleting" @click="handleDelete(record)"> 删除 </a-button>
+          </a-space>
+        </template>
+      </template>
+    </a-table>
+
+    <!-- 通道列表 -->
+    <a-table v-else :columns="channelColumns" :data-source="channels" :loading="loading" :pagination="pagination" :scroll="{ y: `calc(100vh - 334px)` }" :row-key="record => record.id" class="devices-table" @change="handleChannelTableChange">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <span class="device-name-cell">
+            <VideoCameraOutlined class="device-icon" />
+            <span class="device-name">{{ record.name || record.channelid }}</span>
+          </span>
+        </template>
+        <template v-else-if="column.key === 'status'">
+          <a-badge :status="record.status === 'ON' ? 'success' : 'default'" :text="record.status === 'ON' ? '在线' : '离线'" />
+        </template>
+        <template v-else-if="column.key === 'info'">
+          <span class="info-cell">
+            <span v-if="record.manufacturer" class="info-item">{{ record.manufacturer }}</span>
+            <span v-if="record.model" class="info-item">{{ record.model }}</span>
+          </span>
+        </template>
+        <template v-else-if="column.key === 'streamtype'">
+          <a-tag :color="record.streamtype === 'pull' ? 'blue' : 'green'">
+            {{ record.streamtype === 'pull' ? '拉流' : '推流' }}
+          </a-tag>
+        </template>
+        <template v-else-if="column.key === 'address'">
+          <span class="address-cell">{{ record.address || '-' }}</span>
+        </template>
+        <template v-else-if="column.key === 'active'">
+          <span class="time-cell">{{ formatTime(record.active) }}</span>
+        </template>
+        <template v-else-if="column.key === 'action'">
+          <a-space>
+            <a-button type="link" size="small"> 直播 </a-button>
+            <a-button type="link" size="small"> 回放 </a-button>
           </a-space>
         </template>
       </template>
@@ -102,19 +147,23 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { getDevices, createDevice, deleteDevice } from '@/api/device'
+import { getChannels } from '@/api/channel'
 import { message } from 'ant-design-vue'
-import { DownOutlined, ReloadOutlined, CheckOutlined, BorderOutlined, PlusOutlined, DeleteOutlined, PlaySquareOutlined } from '@ant-design/icons-vue'
+import { DownOutlined, ReloadOutlined, CheckOutlined, BorderOutlined, PlusOutlined, DeleteOutlined, PlaySquareOutlined, ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
 import DeviceForm from './DeviceForm.vue'
 import request from '@/api/request'
 
+const mode = ref('devices')
 const devices = ref([])
+const channels = ref([])
 const loading = ref(false)
 const batchMode = ref(false)
 const selectedRowKeys = ref([])
 
+const currentDevice = ref(null)
+
 const editModalVisible = ref(false)
 const addModalVisible = ref(false)
-const currentDevice = ref(null)
 
 const statusFilter = ref(null)
 
@@ -127,7 +176,7 @@ const pagination = reactive({
   showTotal: total => `共 ${total} 条`
 })
 
-const columns = computed(() => [
+const deviceColumns = computed(() => [
   {
     title: '设备名称',
     key: 'name',
@@ -172,7 +221,50 @@ const columns = computed(() => [
   {
     title: '操作',
     key: 'action',
-    width: 120,
+    width: 180,
+    fixed: 'right'
+  }
+])
+
+const channelColumns = computed(() => [
+  {
+    title: '通道名称',
+    key: 'name',
+    width: 200,
+    ellipsis: true
+  },
+  {
+    title: '通道ID',
+    dataIndex: 'channelid',
+    key: 'channelid',
+    width: 180,
+    ellipsis: true
+  },
+  {
+    title: '状态',
+    key: 'status',
+    width: 80
+  },
+  {
+    title: '设备信息',
+    key: 'info',
+    width: 150,
+    ellipsis: true
+  },
+  {
+    title: '播放类型',
+    key: 'streamtype',
+    width: 88
+  },
+  {
+    title: '最后活跃',
+    key: 'active',
+    width: 150
+  },
+  {
+    title: '操作',
+    key: 'action',
+    width: 140,
     fixed: 'right'
   }
 ])
@@ -181,6 +273,14 @@ const formatTime = timestamp => {
   if (!timestamp) return '-'
   const date = new Date(timestamp * 1000)
   return date.toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-')
+}
+
+const refresh = () => {
+  if (mode.value === 'devices') {
+    fetchDevices()
+  } else {
+    fetchChannels()
+  }
 }
 
 const fetchDevices = async () => {
@@ -203,6 +303,25 @@ const fetchDevices = async () => {
   }
 }
 
+const fetchChannels = async () => {
+  if (!currentDevice.value) return
+  loading.value = true
+  try {
+    const params = {
+      limit: pagination.pageSize,
+      skip: (pagination.current - 1) * pagination.pageSize,
+      filters: JSON.stringify([{ field_name: 'deviceid', opertator: '=', value: currentDevice.value.deviceid }])
+    }
+    const res = await getChannels(params)
+    channels.value = res.data?.list || []
+    pagination.total = res.data?.total || 0
+  } catch (error) {
+    // error handled by request interceptor
+  } finally {
+    loading.value = false
+  }
+}
+
 watch(statusFilter, () => {
   pagination.current = 1
   fetchDevices()
@@ -217,6 +336,12 @@ const handleTableChange = (pag, filters) => {
   fetchDevices()
 }
 
+const handleChannelTableChange = pag => {
+  pagination.current = pag.current
+  pagination.pageSize = pag.pageSize
+  fetchChannels()
+}
+
 const handleSelectionChange = keys => {
   selectedRowKeys.value = keys
 }
@@ -226,6 +351,13 @@ const toggleBatchMode = () => {
   if (!batchMode.value) {
     selectedRowKeys.value = []
   }
+}
+
+const openChannelsModal = record => {
+  currentDevice.value = record
+  pagination.current = 1
+  mode.value = 'channels'
+  fetchChannels()
 }
 
 const openEditModal = record => {
@@ -310,7 +442,8 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .devices-container {
-  margin: 16px;
+  margin: 16px 16px 0;
+  padding: 16px;
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
@@ -319,14 +452,17 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #f0f0f0;
-    background: #fafafa;
+    padding: 0 0 16px 0px;
 
     .header-left {
       display: flex;
       align-items: center;
       gap: 12px;
+
+      .mode-title {
+        font-weight: 500;
+        color: #262626;
+      }
 
       .selection-tip {
         font-size: 13px;
