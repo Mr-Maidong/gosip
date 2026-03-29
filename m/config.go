@@ -71,6 +71,8 @@ type SysInfo struct {
 	DNUM int `json:"dnum" bson:"dnum" yaml:"dnum" mapstructure:"dnum"`
 	// LID 当前服务id
 	LID         string `json:"lid" bson:"lid" yaml:"lid" mapstructure:"lid"`
+	// PWD 默认设备接入密码
+	PWD string `json:"pwd" yaml:"pwd" mapstructure:"pwd"`
 	MediaServer bool
 	// 媒体服务器接流地址
 	MediaServerRtpIP net.IP `gorm:"-" json:"-"`

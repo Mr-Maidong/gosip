@@ -124,10 +124,16 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 		if fromUser, ok := parserDevicesFromReqeust(req); ok {
 			user := Devices{DeviceID: fromUser.DeviceID}
 			if err := db.Get(db.DBClient, &user); err != nil {
-				// 设备不存在，发送通知
-				logrus.Warnf("未知设备首次注册尝试: DeviceID=%s, Addr=%s", fromUser.DeviceID, fromUser.addr.URI.String())
-				go notify(notifyDeviceUnknown(fromUser.DeviceID, fromUser.addr.URI.String()))
-				return
+				// 设备不存在，自动插入数据库（使用配置的默认密码）
+				logrus.Infof("自动注册新设备: DeviceID=%s, Addr=%s", fromUser.DeviceID, fromUser.addr.URI.String())
+				newUser := fromUser
+				newUser.Name = fromUser.DeviceID
+				newUser.PWD = _sysinfo.PWD
+				if err := db.Create(db.DBClient, &newUser); err != nil {
+					logrus.Errorf("自动注册设备失败: DeviceID=%s, err=%v", fromUser.DeviceID, err)
+					go notify(notifyDeviceUnknown(fromUser.DeviceID, fromUser.addr.URI.String()))
+					return
+				}
 			}
 		}
 	}

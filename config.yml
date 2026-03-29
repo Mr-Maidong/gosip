@@ -27,6 +27,7 @@ gb28181: # gb28181 域，系统 id，用户 id，通道 id，用户数量，初�
   cid:    33010000001318       # 通道前缀
   dnum:   0 # 设备 id = did + dnum
   cnum:   0 # 通道 id = cid + cnum
+  pwd:    123456 # 默认设备接入密码
 notify:
   devices_unknown: # 未知设备通知
   devices_active: # 设备活跃通知
