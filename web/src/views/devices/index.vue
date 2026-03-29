@@ -92,7 +92,8 @@
           <span class="time-cell">{{ formatTime(record.active) }}</span>
         </template>
         <template v-else-if="column.key === 'action'">
-          <a-space>
+          <a-space :size="0">
+            <a-button type="link" size="small" :loading="record.syncing" @click="handleSync(record)"> 同步 </a-button>
             <a-button type="link" size="small" @click="openChannelsModal(record)"> 通道 </a-button>
             <a-button type="link" size="small" @click="openEditModal(record)"> 编辑 </a-button>
             <a-button type="link" danger size="small" :loading="record.deleting" @click="handleDelete(record)"> 删除 </a-button>
@@ -146,10 +147,10 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { getDevices, createDevice, deleteDevice } from '@/api/device'
+import { getDevices, createDevice, deleteDevice, syncChannels } from '@/api/device'
 import { getChannels } from '@/api/channel'
 import { message } from 'ant-design-vue'
-import { DownOutlined, ReloadOutlined, CheckOutlined, BorderOutlined, PlusOutlined, DeleteOutlined, PlaySquareOutlined, ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
+import { DownOutlined, ReloadOutlined, CheckOutlined, BorderOutlined, PlusOutlined, DeleteOutlined, PlaySquareOutlined, ArrowLeftOutlined, VideoCameraOutlined, SyncOutlined } from '@ant-design/icons-vue'
 import DeviceForm from './DeviceForm.vue'
 import request from '@/api/request'
 
@@ -294,7 +295,7 @@ const fetchDevices = async () => {
       params.filters = JSON.stringify([{ field_name: 'regist', opertator: '=', value: statusFilter.value }])
     }
     const res = await getDevices(params)
-    devices.value = (res.data?.list || []).map(item => ({ ...item, deleting: false }))
+    devices.value = (res.data?.list || []).map(item => ({ ...item, deleting: false, syncing: false }))
     pagination.total = res.data?.total || 0
   } catch (error) {
     // error handled by request interceptor
@@ -416,6 +417,18 @@ const handleDelete = async record => {
     // error handled by request interceptor
   } finally {
     record.deleting = false
+  }
+}
+
+const handleSync = async record => {
+  record.syncing = true
+  try {
+    await syncChannels(record.deviceid)
+    message.success('通道同步请求已发送')
+  } catch (error) {
+    // error handled by request interceptor
+  } finally {
+    record.syncing = false
   }
 }
 

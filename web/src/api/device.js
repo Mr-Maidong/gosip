@@ -42,3 +42,13 @@ export function ptzControl(data) {
     data
   })
 }
+
+/**
+ * 同步设备通道
+ */
+export function syncChannels(id) {
+  return request({
+    url: `/v1/devices/${id}/channels_sync`,
+    method: 'post'
+  })
+}
