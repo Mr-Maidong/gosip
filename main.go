@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
@@ -50,7 +51,15 @@ func main() {
 		http.ListenAndServe("0.0.0.0:6060", nil)
 	}()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	sipapi.Start()
+
+	// 启动设备离线检测监听
+	if db.RedisClient != nil {
+		sipapi.StartDeviceOfflineWatcher(ctx)
+	}
 
 	// 设置 JWT 密钥（使用配置中的 secret）
 	utils.SetJWTSecret(m.MConfig.Secret)
@@ -158,6 +167,13 @@ func generateAvatarForUsersWithoutAvatar() {
 
 func init() {
 	m.LoadConfig()
+	if m.MConfig.Redis.Addr != "" {
+		if err := db.InitRedis(m.MConfig.Redis.Addr, m.MConfig.Redis.Password, m.MConfig.Redis.DB); err != nil {
+			logrus.Errorln("Init redis error:", err)
+		} else {
+			logrus.Infoln("Init redis ok")
+		}
+	}
 	_cron()
 }
 

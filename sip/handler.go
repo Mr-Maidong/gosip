@@ -107,6 +107,11 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 					db.DBClient.Save(&user)
 					logrus.Infoln("new user regist,id:", user.DeviceID)
 				}
+				if db.RedisClient != nil {
+					if err := db.RefreshDeviceRedis(user.DeviceID); err != nil {
+						logrus.Warnln("Refresh device redis error:", user.DeviceID, err)
+					}
+				}
 				tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil))
 				// 注册成功后查询设备信息，获取制作厂商等信息
 				go notify(notifyDevicesRegister(user))
@@ -133,6 +138,11 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 					logrus.Errorf("自动注册设备失败: DeviceID=%s, err=%v", fromUser.DeviceID, err)
 					go notify(notifyDeviceUnknown(fromUser.DeviceID, fromUser.addr.URI.String()))
 					return
+				}
+				if db.RedisClient != nil {
+					if err := db.RefreshDeviceRedis(newUser.DeviceID); err != nil {
+						logrus.Warnln("Refresh device redis error:", newUser.DeviceID, err)
+					}
 				}
 			}
 		}

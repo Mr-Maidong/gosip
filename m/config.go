@@ -14,6 +14,7 @@ import (
 type Config struct {
 	MOD       string            `json:"mod" yaml:"mod" mapstructure:"mod"`
 	DB        db.Config         `json:"database" yaml:"database" mapstructure:"database"`
+	Redis     RedisConfig       `json:"redis" yaml:"redis" mapstructure:"redis"`
 	LogLevel  string            `json:"logger" yaml:"logger" mapstructure:"logger"`
 	UDP       string            `json:"udp" yaml:"udp" mapstructure:"udp"`
 	TCP       string            `json:"tcp" yaml:"tcp" mapstructure:"tcp"`
@@ -25,7 +26,14 @@ type Config struct {
 	GB28181   *SysInfo          `json:"gb28181" yaml:"gb28181" mapstructure:"gb28181"`
 	Notify    map[string]string `json:"notify" yaml:"notify" mapstructure:"notify"`
 	NotifyMap map[string]string
-	JWT       JWTConfig         `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
+	JWT       JWTConfig `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
+}
+
+// RedisConfig Redis 配置
+type RedisConfig struct {
+	Addr     string `json:"addr" yaml:"addr" mapstructure:"addr"`
+	Password string `json:"password" yaml:"password" mapstructure:"password"`
+	DB       int    `json:"db" yaml:"db" mapstructure:"db"`
 }
 
 type RecordCfg struct {
@@ -70,9 +78,9 @@ type SysInfo struct {
 	// DNUM 当前设备数
 	DNUM int `json:"dnum" bson:"dnum" yaml:"dnum" mapstructure:"dnum"`
 	// LID 当前服务id
-	LID         string `json:"lid" bson:"lid" yaml:"lid" mapstructure:"lid"`
+	LID string `json:"lid" bson:"lid" yaml:"lid" mapstructure:"lid"`
 	// PWD 默认设备接入密码
-	PWD string `json:"pwd" yaml:"pwd" mapstructure:"pwd"`
+	PWD         string `json:"pwd" yaml:"pwd" mapstructure:"pwd"`
 	MediaServer bool
 	// 媒体服务器接流地址
 	MediaServerRtpIP net.IP `gorm:"-" json:"-"`

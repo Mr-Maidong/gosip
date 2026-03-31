@@ -17,15 +17,45 @@ zlm免编译docker镜像 [zlm docker image](https://hub.docker.com/repository/do
 ## 快速开始
 1. 运行zlmedia 具体运行方式请参考[ZLMediaKit](https://github.com/xia-chu/ZLMediaKit)
 2. 启动mysql 并创建DB
-3. 修改demo下的配置文件（数据库地址和zlm地址,本地端口等）
-4. 启动gosip ，启动后gosip会自动创建数据库表。浏览器访问http://localhost:8090/swagger/index.html 可查看在线API文档
-5. 通过设备注册接口（POST /devices) 新注册一个设备，获取到设备sipid和服务器sipid，服务器域等信息，
-6. 通过通道注册接口（POST /devices/:id/channels)新增通道设备
-7. 将5，6步生成的数据填充到录像机GB28181配置页面，并保存
-8. 查看设备和通道是否活跃并在线
-9. 通道在线后访问播放接口（POST /channels/:id/streams）获取直播流
-10. 根据返回的播放地址进行播放
-11. 调用关闭流接口（DELETE /streams/:id) 关闭流
+3. 启动Redis（用于设备离线检测）
+4. 修改demo下的配置文件（数据库地址和zlm地址,本地端口等）
+5. 启动gosip ，启动后gosip会自动创建数据库表。浏览器访问http://localhost:8090/swagger/index.html 可查看在线API文档
+6. 通过设备注册接口（POST /devices) 新注册一个设备，获取到设备sipid和服务器sipid，服务器域等信息，
+7. 通过通道注册接口（POST /devices/:id/channels)新增通道设备
+8. 将5，6步生成的数据填充到录像机GB28181配置页面，并保存
+9. 查看设备和通道是否活跃并在线
+10. 通道在线后访问播放接口（POST /channels/:id/streams）获取直播流
+11. 根据返回的播放地址进行播放
+12. 调用关闭流接口（DELETE /streams/:id) 关闭流
+
+### Redis 配置（设备离线检测）
+设备离线检测依赖 Redis 实现心跳保活，配置如下：
+
+**配置文件 `config.yml`：**
+```yaml
+redis:
+  addr: localhost:6379      # Redis 地址
+  password: ""              # Redis 密码（无密码留空）
+  db: 0                    # Redis 数据库编号
+```
+
+**Redis 服务端配置：**
+需要在 Redis 配置文件中开启键过期事件通知，否则无法检测设备离线。
+
+修改 Redis 配置文件（`redis.conf`）或启动命令添加：
+```
+notify-keyspace-events Ex
+```
+
+或使用启动命令：
+```bash
+redis-server --notify-keyspace-events Ex
+```
+
+**工作原理：**
+- 设备注册/心跳时写入 Redis key，TTL 60秒
+- 60秒内无新心跳则 key 自动过期
+- 程序订阅 Redis 过期事件，key 过期时自动更新设备状态为离线
 
 ### 视频教程
 [![asciicast](./demo/api.png)](https://down-yss.oss-cn-hangzhou.aliyuncs.com/v.m4v)
