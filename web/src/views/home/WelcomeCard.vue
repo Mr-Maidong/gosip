@@ -2,13 +2,19 @@
   <div class="welcome-card">
     <div class="card-header">
       <div class="user-info">
-        <a-avatar :size="48" :src="userAvatar" class="user-avatar">
+        <a-avatar
+          :size="48"
+          :src="userAvatar"
+          class="user-avatar"
+        >
           <template #icon>
             <UserOutlined />
           </template>
         </a-avatar>
         <div class="user-details">
-          <h2 class="greeting">{{ greeting }}，{{ userStore.userInfo?.name || userStore.userInfo?.username }}</h2>
+          <h2 class="greeting">
+            {{ greeting }}，{{ userStore.userInfo?.name || userStore.userInfo?.username }}
+          </h2>
           <span class="meta">
             <a-tag :color="roleColor">{{ roleText }}</a-tag>
             <span class="date">{{ currentDate }}</span>
@@ -16,25 +22,43 @@
         </div>
       </div>
       <div class="quick-actions">
-        <a-button type="primary" @click="$router.push('/devices')"> 添加设备 </a-button>
-        <a-button @click="$router.push('/streams')"> 查看流 </a-button>
-        <a-button @click="$router.push('/settings')"> 系统设置 </a-button>
+        <a-button
+          type="primary"
+          @click="$router.push('/devices')"
+        >
+          添加设备
+        </a-button>
+        <a-button @click="$router.push('/streams')">
+          查看流
+        </a-button>
+        <a-button @click="$router.push('/settings')">
+          系统设置
+        </a-button>
       </div>
     </div>
 
     <div class="card-body">
       <div class="stats-row">
-        <div class="stat-item" @click="$router.push('/devices')">
+        <div
+          class="stat-item"
+          @click="$router.push('/devices')"
+        >
           <span class="stat-value">{{ stats.devices }}</span>
           <span class="stat-label">设备</span>
         </div>
         <div class="stat-divider" />
-        <div class="stat-item" @click="$router.push('/devices')">
+        <div
+          class="stat-item"
+          @click="$router.push('/devices')"
+        >
           <span class="stat-value">{{ stats.channels }}</span>
           <span class="stat-label">通道</span>
         </div>
         <div class="stat-divider" />
-        <div class="stat-item" @click="$router.push('/streams')">
+        <div
+          class="stat-item"
+          @click="$router.push('/streams')"
+        >
           <span class="stat-value">{{ stats.streams }}</span>
           <span class="stat-label">在线流</span>
         </div>

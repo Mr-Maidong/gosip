@@ -13,31 +13,49 @@
         </template>
         <template v-else>
           <a-button-group>
-            <a-button :type="batchMode ? 'primary' : 'default'" @click="toggleBatchMode">
+            <a-button
+              :type="batchMode ? 'primary' : 'default'"
+              @click="toggleBatchMode"
+            >
               <template #icon>
                 <CheckOutlined v-if="batchMode" />
                 <BorderOutlined v-else />
               </template>
               {{ batchMode ? '退出批量' : '批量操作' }}
             </a-button>
-            <a-dropdown :disabled="!batchMode || selectedRowKeys.length === 0" trigger="click">
-              <a-button :type="batchMode ? 'primary' : 'default'" :disabled="!batchMode || selectedRowKeys.length === 0">
+            <a-dropdown
+              :disabled="!batchMode || selectedRowKeys.length === 0"
+              trigger="click"
+            >
+              <a-button
+                :type="batchMode ? 'primary' : 'default'"
+                :disabled="!batchMode || selectedRowKeys.length === 0"
+              >
                 <template #icon>
                   <DownOutlined />
                 </template>
               </a-button>
               <template #overlay>
                 <a-menu @click="handleBatchAction">
-                  <a-menu-item key="delete"> <DeleteOutlined /> 批量删除 </a-menu-item>
+                  <a-menu-item key="delete">
+                    <DeleteOutlined /> 批量删除
+                  </a-menu-item>
                 </a-menu>
               </template>
             </a-dropdown>
           </a-button-group>
-          <span v-if="batchMode && selectedRowKeys.length > 0" class="selection-tip"> 已选择 {{ selectedRowKeys.length }} 项 </span>
+          <span
+            v-if="batchMode && selectedRowKeys.length > 0"
+            class="selection-tip"
+          > 已选择 {{ selectedRowKeys.length }} 项 </span>
         </template>
       </div>
       <div class="header-right">
-        <a-button v-if="mode === 'devices'" type="primary" @click="openAddModal">
+        <a-button
+          v-if="mode === 'devices'"
+          type="primary"
+          @click="openAddModal"
+        >
           <template #icon>
             <PlusOutlined />
           </template>
@@ -73,37 +91,86 @@
           </span>
         </template>
         <template v-else-if="column.key === 'regist'">
-          <a-badge :status="record.regist ? 'success' : 'default'" :text="record.regist ? '已注册' : '未注册'" />
+          <a-badge
+            :status="record.regist ? 'success' : 'default'"
+            :text="record.regist ? '已注册' : '未注册'"
+          />
         </template>
         <template v-else-if="column.key === 'info'">
           <span class="info-cell">
-            <span v-if="record.manufacturer" class="info-item">{{ record.manufacturer }}</span>
-            <span v-if="record.model" class="info-item">{{ record.model }}</span>
-            <span v-if="record.devicetype" class="info-item">{{ record.devicetype }}</span>
+            <span
+              v-if="record.manufacturer"
+              class="info-item"
+            >{{ record.manufacturer }}</span>
+            <span
+              v-if="record.model"
+              class="info-item"
+            >{{ record.model }}</span>
+            <span
+              v-if="record.devicetype"
+              class="info-item"
+            >{{ record.devicetype }}</span>
           </span>
         </template>
         <template v-else-if="column.key === 'host'">
           <span class="host-cell">{{ record.host || '-' }}</span>
         </template>
-        <template v-else-if="column.key === 'address'">
-          <span class="address-cell">{{ record.host }}:{{ record.port }}</span>
+        <template v-else-if="column.key === 'source'">
+          <span class="host-cell">{{ record.source || '-' }}</span>
         </template>
         <template v-else-if="column.key === 'active'">
           <span class="time-cell">{{ formatTime(record.active) }}</span>
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space :size="0">
-            <a-button type="link" size="small" :loading="record.syncing" @click="handleSync(record)"> 同步 </a-button>
-            <a-button type="link" size="small" @click="openChannelsModal(record)"> 通道 </a-button>
-            <a-button type="link" size="small" @click="openEditModal(record)"> 编辑 </a-button>
-            <a-button type="link" danger size="small" :loading="record.deleting" @click="handleDelete(record)"> 删除 </a-button>
+            <a-button
+              type="link"
+              size="small"
+              :loading="record.syncing"
+              @click="handleSync(record)"
+            >
+              同步
+            </a-button>
+            <a-button
+              type="link"
+              size="small"
+              @click="openChannelsModal(record)"
+            >
+              通道
+            </a-button>
+            <a-button
+              type="link"
+              size="small"
+              @click="openEditModal(record)"
+            >
+              编辑
+            </a-button>
+            <a-button
+              type="link"
+              danger
+              size="small"
+              :loading="record.deleting"
+              @click="handleDelete(record)"
+            >
+              删除
+            </a-button>
           </a-space>
         </template>
       </template>
     </a-table>
 
     <!-- 通道列表 -->
-    <a-table v-else :columns="channelColumns" :data-source="channels" :loading="loading" :pagination="pagination" :scroll="{ y: `calc(100vh - 334px)` }" :row-key="record => record.id" class="devices-table" @change="handleChannelTableChange">
+    <a-table
+      v-else
+      :columns="channelColumns"
+      :data-source="channels"
+      :loading="loading"
+      :pagination="pagination"
+      :scroll="{ y: `calc(100vh - 334px)` }"
+      :row-key="record => record.id"
+      class="devices-table"
+      @change="handleChannelTableChange"
+    >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           <span class="device-name-cell">
@@ -112,12 +179,21 @@
           </span>
         </template>
         <template v-else-if="column.key === 'status'">
-          <a-badge :status="record.status === 'ON' ? 'success' : 'default'" :text="record.status === 'ON' ? '在线' : '离线'" />
+          <a-badge
+            :status="record.status === 'ON' ? 'success' : 'default'"
+            :text="record.status === 'ON' ? '在线' : '离线'"
+          />
         </template>
         <template v-else-if="column.key === 'info'">
           <span class="info-cell">
-            <span v-if="record.manufacturer" class="info-item">{{ record.manufacturer }}</span>
-            <span v-if="record.model" class="info-item">{{ record.model }}</span>
+            <span
+              v-if="record.manufacturer"
+              class="info-item"
+            >{{ record.manufacturer }}</span>
+            <span
+              v-if="record.model"
+              class="info-item"
+            >{{ record.model }}</span>
           </span>
         </template>
         <template v-else-if="column.key === 'streamtype'">
@@ -133,15 +209,34 @@
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
-            <a-button type="link" size="small"> 直播 </a-button>
-            <a-button type="link" size="small"> 回放 </a-button>
+            <a-button
+              type="link"
+              size="small"
+            >
+              直播
+            </a-button>
+            <a-button
+              type="link"
+              size="small"
+            >
+              回放
+            </a-button>
           </a-space>
         </template>
       </template>
     </a-table>
 
-    <DeviceForm v-model="editModalVisible" type="edit" :device="currentDevice" @success="handleEditSuccess" />
-    <DeviceForm v-model="addModalVisible" type="add" @success="handleAddSuccess" />
+    <DeviceForm
+      v-model="editModalVisible"
+      type="edit"
+      :device="currentDevice"
+      @success="handleEditSuccess"
+    />
+    <DeviceForm
+      v-model="addModalVisible"
+      type="add"
+      @success="handleAddSuccess"
+    />
   </div>
 </template>
 
@@ -209,8 +304,8 @@ const deviceColumns = computed(() => [
     ellipsis: true
   },
   {
-    title: '地址',
-    key: 'address',
+    title: '源地址',
+    key: 'source',
     width: 180,
     ellipsis: true
   },
@@ -374,6 +469,12 @@ const handleEditSuccess = async formData => {
     }
     if (formData.host !== undefined) {
       data.host = formData.host
+    }
+    if (formData.manufacturer !== undefined) {
+      data.manufacturer = formData.manufacturer
+    }
+    if (formData.model !== undefined) {
+      data.model = formData.model
     }
     await request({
       url: `/v1/devices/${formData.deviceid}`,

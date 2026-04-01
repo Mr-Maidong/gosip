@@ -3,27 +3,42 @@
     <div class="streams-header">
       <div class="header-left">
         <a-button-group>
-          <a-button :type="batchMode ? 'primary' : 'default'" :disabled="streams.length === 0" @click="toggleBatchMode">
+          <a-button
+            :type="batchMode ? 'primary' : 'default'"
+            :disabled="streams.length === 0"
+            @click="toggleBatchMode"
+          >
             <template #icon>
               <StopOutlined v-if="batchMode" />
               <BorderOutlined v-else />
             </template>
             {{ batchMode ? '退出批量' : '批量操作' }}
           </a-button>
-          <a-dropdown :disabled="!batchMode || selectedRowKeys.length === 0" trigger="click">
-            <a-button :type="batchMode ? 'primary' : 'default'" :disabled="!batchMode || selectedRowKeys.length === 0">
+          <a-dropdown
+            :disabled="!batchMode || selectedRowKeys.length === 0"
+            trigger="click"
+          >
+            <a-button
+              :type="batchMode ? 'primary' : 'default'"
+              :disabled="!batchMode || selectedRowKeys.length === 0"
+            >
               <template #icon>
                 <DownOutlined />
               </template>
             </a-button>
             <template #overlay>
               <a-menu @click="handleBatchAction">
-                <a-menu-item key="stop"> <StopOutlined /> 批量停止 </a-menu-item>
+                <a-menu-item key="stop">
+                  <StopOutlined /> 批量停止
+                </a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
         </a-button-group>
-        <span v-if="batchMode && selectedRowKeys.length > 0" class="selection-tip"> 已选择 {{ selectedRowKeys.length }} 项 </span>
+        <span
+          v-if="batchMode && selectedRowKeys.length > 0"
+          class="selection-tip"
+        > 已选择 {{ selectedRowKeys.length }} 项 </span>
       </div>
       <div class="header-right">
         <a-button @click="fetchStreams">
@@ -57,23 +72,38 @@
           </span>
         </template>
         <template v-else-if="column.key === 'status'">
-          <a-badge :status="getStatusBadge(record.status)" :text="getStatusText(record.status)" />
+          <a-badge
+            :status="getStatusBadge(record.status)"
+            :text="getStatusText(record.status)"
+          />
         </template>
         <template v-else-if="column.key === 'stream'">
-          <a-tag :color="record.stream ? 'success' : 'default'" class="stream-tag">
+          <a-tag
+            :color="record.stream ? 'success' : 'default'"
+            class="stream-tag"
+          >
             {{ record.stream ? '已接收' : '未接收' }}
           </a-tag>
         </template>
         <template v-else-if="column.key === 'type'">
           <span class="type-cell">
-            <PlayCircleOutlined v-if="record.t === 0" class="type-icon live" />
-            <HistoryOutlined v-else class="type-icon replay" />
+            <PlayCircleOutlined
+              v-if="record.t === 0"
+              class="type-icon live"
+            />
+            <HistoryOutlined
+              v-else
+              class="type-icon replay"
+            />
             {{ record.t === 0 ? '直播' : '回放' }}
           </span>
         </template>
         <template v-else-if="column.key === 'address'">
           <div class="address-cell">
-            <div v-if="record.rtmp" class="address-item">
+            <div
+              v-if="record.rtmp"
+              class="address-item"
+            >
               <span class="address-text">{{ record.rtmp }}</span>
             </div>
           </div>
@@ -84,7 +114,16 @@
           </span>
         </template>
         <template v-else-if="column.key === 'action'">
-          <a-button type="link" danger size="small" :loading="record.stopping" :disabled="record.status === 1" @click="handleStop(record)"> 停止 </a-button>
+          <a-button
+            type="link"
+            danger
+            size="small"
+            :loading="record.stopping"
+            :disabled="record.status === 1"
+            @click="handleStop(record)"
+          >
+            停止
+          </a-button>
         </template>
       </template>
     </a-table>

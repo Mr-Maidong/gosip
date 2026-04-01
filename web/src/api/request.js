@@ -4,7 +4,7 @@ import { useUserStore } from '@/store/user'
 
 // 创建 axios 实例
 const request = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:8090/api',
   timeout: 30000
 })
 
@@ -36,8 +36,9 @@ request.interceptors.response.use(
   },
   error => {
     const res = error.response?.data
-    const errMsg = `${res?.code}: ${res?.data}` || error.message || '请求失败'
-    message.error(errMsg)
+    const errMsg = res ? `${res?.code}: ${res?.data}` : error.message || '请求失败'
+    console.log(errMsg)
+    message.error(errMsg ? errMsg : '请求失败')
     if (res?.code === 1004) {
       const userStore = useUserStore()
       userStore.logout()
