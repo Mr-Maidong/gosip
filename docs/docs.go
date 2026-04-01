@@ -622,7 +622,7 @@ const docTemplate = `{
             "post": {
                 "description": "调整设备信息",
                 "consumes": [
-                    "application/x-www-form-urlencoded"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -633,23 +633,13 @@ const docTemplate = `{
                 "summary": "设备修改接口",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "设备id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "设备密码(GB28181认证密码)",
-                        "name": "pwd",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "string",
-                        "description": "设备名称",
-                        "name": "name",
-                        "in": "formData"
+                        "description": "设备更新请求",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.DeviceUpdateRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -892,7 +882,7 @@ const docTemplate = `{
         },
         "/api/v1/login": {
             "post": {
-                "description": "用户登录获取 JWT Token，Token 有效期 7 天",
+                "description": "用户登录获取 JWT Token，Token 有效期可在 config.yml 中配置（jwt.token_expire，默认 7 天）",
                 "consumes": [
                     "application/x-www-form-urlencoded"
                 ],
@@ -969,26 +959,6 @@ const docTemplate = `{
                         "description": "登出成功",
                         "schema": {
                             "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/media/status": {
-            "get": {
-                "description": "获取 ZLM 媒体服务器的在线状态和配置信息",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "media"
-                ],
-                "summary": "获取媒体服务器状态",
-                "responses": {
-                    "0": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/api.MediaServerStatusResponse"
                         }
                     }
                 }
@@ -1799,41 +1769,6 @@ const docTemplate = `{
                         "description": "",
                         "schema": {
                             "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/stream/keepalive": {
-            "post": {
-                "description": "ZLM 定期调用此接口保持心跳，更新服务器状态",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "zlm"
-                ],
-                "summary": "ZLM 流媒体服务器心跳",
-                "parameters": [
-                    {
-                        "description": "心跳数据",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.ZLMStreamKeepaliveData"
-                        }
-                    }
-                ],
-                "responses": {
-                    "0": {
-                        "description": "",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
                         }
                     }
                 }
@@ -2693,6 +2628,61 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/zlm/keepalive": {
+            "post": {
+                "description": "ZLM 定期调用此接口保持心跳，更新服务器状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "zlm"
+                ],
+                "summary": "ZLM 流媒体服务器心跳",
+                "parameters": [
+                    {
+                        "description": "心跳数据",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ZLMStreamKeepaliveData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "0": {
+                        "description": "",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/zlm/status": {
+            "get": {
+                "description": "获取 ZLM 媒体服务器的在线状态和配置信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "zlm"
+                ],
+                "summary": "获取媒体服务器状态",
+                "responses": {
+                    "0": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.MediaServerStatusResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -2863,6 +2853,10 @@ const docTemplate = `{
                 "mediaServer": {
                     "type": "boolean"
                 },
+                "pwd": {
+                    "description": "PWD 默认设备接入密码",
+                    "type": "string"
+                },
                 "region": {
                     "description": "Region 当前域",
                     "type": "string"
@@ -2905,6 +2899,31 @@ const docTemplate = `{
             "properties": {
                 "hasPermission": {
                     "type": "boolean"
+                }
+            }
+        },
+        "model.DeviceUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "description": "@Description 设备地址",
+                    "type": "string"
+                },
+                "manufacturer": {
+                    "description": "@Description 制造商",
+                    "type": "string"
+                },
+                "model": {
+                    "description": "@Description 型号",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "@Description 设备名称",
+                    "type": "string"
+                },
+                "pwd": {
+                    "description": "@Description 设备密码",
+                    "type": "string"
                 }
             }
         },
