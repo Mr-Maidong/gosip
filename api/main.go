@@ -7,16 +7,16 @@ import (
 )
 
 func Init(r *gin.Engine) {
+	// 中间件
+	r.Use(middleware.CORS())
+	r.Use(middleware.Auth) // 认证中间件（验证用户身份）
+	
 	// 健康检查接口（无需鉴权）
 	r.GET("/api/v1/health", api.HealthCheck)
 
 	// 登录/登出接口（无需鉴权）
 	r.POST("/api/v1/login", middleware.Login)
 	r.POST("/api/v1/logout", middleware.Logout)
-
-	// 中间件
-	r.Use(middleware.Auth) // 认证中间件（验证用户身份）
-	r.Use(middleware.CORS())
 
 	// 设备类接口
 	{

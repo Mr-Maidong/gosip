@@ -152,3 +152,17 @@ type User struct {
 func (User) TableName() string {
 	return "users"
 }
+
+// DeviceUpdateRequest 设备更新请求
+type DeviceUpdateRequest struct {
+	// @Description 设备名称
+	Name string `json:"name"`
+	// @Description 设备密码
+	PWD string `json:"pwd"`
+	// @Description 设备地址
+	Host string `json:"host"`
+	// @Description 制造商
+	Manufacturer string `json:"manufacturer"`
+	// @Description 型号
+	Model string `json:"model"`
+}
