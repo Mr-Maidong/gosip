@@ -53,6 +53,12 @@ yarn format
 
 ---
 
+## Go Swagger
+```
+go install github.com/swaggo/swag/cmd/swag@latest
+swag init -g main.go -o docs
+```
+
 ## Code Style Guidelines
 
 ### Go
@@ -241,3 +247,57 @@ if db.RecordNotFound(err) { ... }
 - Default admin: `admin` / `admin123`
 - Cron jobs every 5 min: `sipapi.CheckStreams`, `sipapi.ClearFiles`
 - Config: `config.yml`
+
+---
+
+## Redis Device Offline Detection
+
+设备离线检测依赖 Redis 实现心跳保活机制。
+
+### Redis Configuration
+
+**config.yml:**
+```yaml
+redis:
+  addr: localhost:6379      # Redis 地址
+  password: ""              # Redis 密码（无密码留空）
+  db: 0                    # Redis 数据库编号
+```
+
+**Redis Server requires:**
+```
+notify-keyspace-events Ex
+```
+
+### How It Works
+
+```
+设备注册/心跳(OK) → RefreshDeviceRedis() → Redis key: device:{id}, TTL=60秒
+                                                  ↓
+                               60秒内无新心跳 → key自动过期
+                                                  ↓
+                               __keyevent@0__:expired 收到过期通知
+                                                  ↓
+                               更新数据库 Regist=false + 发送离线通知
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `db/redis.go` | Redis 连接初始化和设备 key 操作函数 |
+| `sip/handler.go` | 设备注册时写入 Redis key |
+| `sip/keepalive.go` | 心跳刷新 Redis TTL + `StartDeviceOfflineWatcher` 监听过期事件 |
+
+### Redis Key Functions
+
+```go
+// 刷新设备 Redis key（TTL 60秒）
+db.RefreshDeviceRedis(deviceID)
+
+// 删除设备 Redis key
+db.DeleteDeviceRedis(deviceID)
+
+// 检查设备是否在线
+exists, _ := db.GetDeviceRedis(deviceID)
+```
