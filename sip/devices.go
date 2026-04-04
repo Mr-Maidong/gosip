@@ -301,12 +301,25 @@ func sipMessageDeviceInfo(u Devices, body []byte) error {
 		logrus.Errorln("sipMessageDeviceInfo Unmarshal xml err:", err, "body:", body)
 		return err
 	}
-	db.UpdateAll(db.DBClient, new(Devices), db.M{"deviceid=?": u.DeviceID}, Devices{
-		Model:        message.Model,
-		DeviceType:   message.DeviceType,
-		Firmware:     message.Firmware,
-		Manufacturer: message.Manufacturer,
-	})
+	logrus.Infoln("sipMessageDeviceInfo message:", message)
+	existing := Devices{DeviceID: u.DeviceID}
+	if err := db.Get(db.DBClient, &existing); err == nil {
+		var updates Devices
+		updates.ActiveAt = time.Now().Unix()
+		if existing.Manufacturer == "" && message.Manufacturer != "" {
+			updates.Manufacturer = message.Manufacturer
+		}
+		if existing.Model == "" && message.Model != "" {
+			updates.Model = message.Model
+		}
+		if existing.DeviceType == "" && message.DeviceType != "" {
+			updates.DeviceType = message.DeviceType
+		}
+		if existing.Firmware == "" && message.Firmware != "" {
+			updates.Firmware = message.Firmware
+		}
+		db.UpdateAll(db.DBClient, new(Devices), db.M{"deviceid=?": u.DeviceID}, updates)
+	}
 	return nil
 }
 

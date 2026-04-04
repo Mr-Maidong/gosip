@@ -80,12 +80,16 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 			return
 		}
 		user := Devices{DeviceID: fromUser.DeviceID}
+		logrus.Infoln("查询数据库用户信息，DeviceID:", fromUser.DeviceID)
 		if err := db.Get(db.DBClient, &user); err == nil {
 			if !user.Regist {
-				// 如果数据库里用户未激活，替换user数据
 				fromUser.ID = user.ID
 				fromUser.Name = user.Name
 				fromUser.PWD = user.PWD
+				fromUser.Manufacturer = user.Manufacturer
+				fromUser.Model = user.Model
+				fromUser.DeviceType = user.DeviceType
+				fromUser.Firmware = user.Firmware
 				user = fromUser
 			}
 			user.addr = fromUser.addr
