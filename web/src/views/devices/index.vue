@@ -212,6 +212,8 @@
             <a-button
               type="link"
               size="small"
+              :loading="record.starting"
+              @click="handleStartLive(record)"
             >
               直播
             </a-button>
@@ -237,6 +239,29 @@
       type="add"
       @success="handleAddSuccess"
     />
+
+    <!-- 直播弹窗 -->
+    <a-modal
+      v-model:open="liveModalVisible"
+      title="直播"
+      :footer="null"
+      width="800px"
+      :destroy-on-close="true"
+    >
+      <div class="live-player-wrapper">
+        <LivePlayer
+          v-if="liveUrl"
+          :url="liveUrl"
+        />
+        <div
+          v-else
+          class="live-loading"
+        >
+          <a-spin size="large" />
+          <span>正在开启直播...</span>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -244,8 +269,10 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { getDevices, createDevice, deleteDevice, syncChannels } from '@/api/device'
 import { getChannels } from '@/api/channel'
+import { startStream } from '@/api/stream'
 import { message } from 'ant-design-vue'
-import { DownOutlined, ReloadOutlined, CheckOutlined, BorderOutlined, PlusOutlined, DeleteOutlined, PlaySquareOutlined, ArrowLeftOutlined, VideoCameraOutlined, SyncOutlined } from '@ant-design/icons-vue'
+import { DownOutlined, ReloadOutlined, CheckOutlined, BorderOutlined, PlusOutlined, DeleteOutlined, PlaySquareOutlined, ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
+import { LivePlayer } from '@/components'
 import DeviceForm from './DeviceForm.vue'
 import request from '@/api/request'
 
@@ -260,6 +287,9 @@ const currentDevice = ref(null)
 
 const editModalVisible = ref(false)
 const addModalVisible = ref(false)
+const liveModalVisible = ref(false)
+const liveUrl = ref('')
+const currentChannel = ref(null)
 
 const statusFilter = ref(null)
 
@@ -409,7 +439,7 @@ const fetchChannels = async () => {
       filters: JSON.stringify([{ field_name: 'deviceid', opertator: '=', value: currentDevice.value.deviceid }])
     }
     const res = await getChannels(params)
-    channels.value = res.data?.list || []
+    channels.value = (res.data?.list || []).map(item => ({ ...item, starting: false }))
     pagination.total = res.data?.total || 0
   } catch (error) {
     // error handled by request interceptor
@@ -530,6 +560,26 @@ const handleSync = async record => {
     // error handled by request interceptor
   } finally {
     record.syncing = false
+  }
+}
+
+const handleStartLive = async record => {
+  record.starting = true
+  liveUrl.value = ''
+  currentChannel.value = record
+  liveModalVisible.value = true
+  try {
+    const res = await startStream(record.channelid, {})
+    if (res.data) {
+      liveUrl.value = res.data.wsflv || res.data.rtmp || ''
+      if (!liveUrl.value) {
+        message.warning('未获取到播放地址')
+      }
+    }
+  } catch (error) {
+    liveModalVisible.value = false
+  } finally {
+    record.starting = false
   }
 }
 
@@ -658,6 +708,25 @@ onMounted(() => {
 
   .time-cell {
     font-size: 12px;
+    color: #8c8c8c;
+  }
+}
+
+.live-player-wrapper {
+  width: 100%;
+  height: 450px;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .live-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     color: #8c8c8c;
   }
 }
