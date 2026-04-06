@@ -204,10 +204,46 @@ func ChannelsList(c *gin.Context) {
 		m.JsonResponse(c, m.StatusDBERR, err)
 		return
 	}
+
+	// 根据设备 Redis 状态动态计算通道在线状态
+	enrichChannelsWithDeviceStatus(channels)
+
 	m.JsonResponse(c, m.StatusSucc, ChannelsListResponse{
 		Total: total,
 		List:  channels,
 	})
+}
+
+// enrichChannelsWithDeviceStatus 根据设备 Redis 状态动态设置通道在线状态
+func enrichChannelsWithDeviceStatus(channels []sipapi.Channels) {
+	if len(channels) == 0 {
+		return
+	}
+
+	// 1. 提取所有 deviceid 去重
+	deviceIDSet := make(map[string]struct{})
+	for _, ch := range channels {
+		deviceIDSet[ch.DeviceID] = struct{}{}
+	}
+
+	deviceIDs := make([]string, 0, len(deviceIDSet))
+	for deviceID := range deviceIDSet {
+		deviceIDs = append(deviceIDs, deviceID)
+	}
+
+	// 2. 批量查询设备在线状态（通过 Redis）
+	deviceStatus := db.GetDevicesOnlineStatus(deviceIDs)
+
+	// 3. 动态设置通道状态
+	for i := range channels {
+		if online, ok := deviceStatus[channels[i].DeviceID]; ok && online {
+			// 设备在线，保持数据库中的状态不变
+			continue
+		}
+		// 设备离线，设置通道为离线
+		channels[i].Status = m.DeviceStatusOFF
+		channels[i].Active = 0
+	}
 }
 
 // @Summary     通道删除接口

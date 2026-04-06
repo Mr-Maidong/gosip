@@ -66,3 +66,38 @@ func GetDeviceRedis(deviceID string) (bool, error) {
 	}
 	return result > 0, nil
 }
+
+// GetDevicesOnlineStatus 批量检查设备在线状态
+// 返回 map[deviceid]bool，true=在线，false=离线
+func GetDevicesOnlineStatus(deviceIDs []string) map[string]bool {
+	result := make(map[string]bool, len(deviceIDs))
+	if RedisClient == nil || len(deviceIDs) == 0 {
+		return result
+	}
+
+	// 使用 Pipeline 批量检查 key 是否存在
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	pipe := RedisClient.Pipeline()
+	cmds := make(map[string]*redis.IntCmd, len(deviceIDs))
+	for _, deviceID := range deviceIDs {
+		cmds[deviceID] = pipe.Exists(ctx, DeviceKeyPrefix+deviceID)
+	}
+
+	_, err := pipe.Exec(ctx)
+	if err != nil && err != redis.Nil {
+		// 出错时全部标记为离线
+		for _, deviceID := range deviceIDs {
+			result[deviceID] = false
+		}
+		return result
+	}
+
+	// 收集结果
+	for deviceID, cmd := range cmds {
+		result[deviceID] = cmd.Val() > 0
+	}
+
+	return result
+}
