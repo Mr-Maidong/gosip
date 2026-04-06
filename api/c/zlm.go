@@ -92,6 +92,7 @@ func zlmStreamChanged(c *gin.Context) {
 	}
 	ssrc := req.Stream
 	if req.Regist {
+		// 流注册：RTMP 是主 schema，最先注册
 		if req.Schema == "rtmp" {
 			d, ok := sipapi.StreamList.Response.Load(ssrc)
 			if ok {
@@ -105,17 +106,16 @@ func zlmStreamChanged(c *gin.Context) {
 			} else {
 				// ssrc不存在，关闭流
 				sipapi.SipStopPlay(ssrc)
-				logrus.Infoln("closeStream on_stream_changed notfound!", req.Stream)
+				logrus.Infoln("[StreamChanged] stream not found on register, closing:", req.Stream)
 			}
 		}
 	} else {
+		// 流注销：HLS 是最后注销的 schema，此时代表所有 schema 都已断开
 		if req.Schema == "hls" {
-			//接收到流注销事件
 			_, ok := sipapi.StreamList.Response.Load(ssrc)
 			if ok {
-				// 流还存在，注销
 				sipapi.SipStopPlay(ssrc)
-				logrus.Infoln("closeStream on_stream_changed cancel!", req.Stream)
+				logrus.Infoln("[StreamChanged] stream deregistered, closed:", req.Stream)
 			}
 		}
 	}

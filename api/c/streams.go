@@ -45,10 +45,19 @@ func Play(c *gin.Context) {
 			return
 		}
 	} else {
-		// 直播 判断当前通道是否存在流了。
+		// 直播 - 检查通道是否已有有效流
 		if succ, ok := sipapi.StreamList.Succ.Load(channelid); ok {
-			m.JsonResponse(c, m.StatusSucc, succ)
-			return
+			stream := succ.(*sipapi.Streams)
+
+			// 验证流是否有效
+			if sipapi.IsStreamValid(stream) {
+				m.JsonResponse(c, m.StatusSucc, succ)
+				return
+			}
+
+			// 流已失效，清理旧流
+			logrus.Warnln("[StreamCleanup] invalid stream detected, closing:", stream.StreamID, "channel:", channelid)
+			sipapi.SipStopPlay(stream.StreamID)
 		}
 	}
 	res, err := sipapi.SipPlay(pm)

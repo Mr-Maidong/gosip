@@ -228,9 +228,21 @@ func SipStopPlay(ssrc string) {
 		resp := play.Resp
 		u, ok := _activeDevices.Load(play.DeviceID)
 		if !ok {
+			// 设备已离线，直接清理
+			logrus.Debugln("[SipStopPlay] device offline, skip BYE:", play.DeviceID)
+			play.Status = 1
+			play.Stop = true
+			play.Msg = "设备已离线"
+			db.Save(db.DBClient, play)
+			StreamList.Response.Delete(ssrc)
+			if play.T == 0 {
+				StreamList.Succ.Delete(play.ChannelID)
+			}
 			return
 		}
 		user := u.(Devices)
+
+		// 设备在线，尝试发送 BYE 请求
 		req := sip.NewRequestFromResponse(sip.BYE, resp)
 		req.SetDestination(user.source)
 		// 根据设备的传输方式发送请求
@@ -242,11 +254,23 @@ func SipStopPlay(ssrc string) {
 			tx, err = srv.Request(req) // 默认UDP
 		}
 		if err != nil {
-			logrus.Warningln("sipStopPlay bye fail.id:", play.DeviceID, play.ChannelID, "err:", err)
+			// 发送失败（如连接断开），直接清理
+			logrus.Warningln("[SipStopPlay] send BYE failed:", play.DeviceID, play.ChannelID, "err:", err)
+			play.Status = 1
+			play.Stop = true
+			play.Msg = "发送 BYE 失败: " + err.Error()
+			db.Save(db.DBClient, play)
+			StreamList.Response.Delete(ssrc)
+			if play.T == 0 {
+				StreamList.Succ.Delete(play.ChannelID)
+			}
+			return
 		}
+
+		// 等待响应
 		_, err = sipResponse(tx)
 		if err != nil {
-			logrus.Warnln("sipStopPlay response fail", err)
+			logrus.Warnln("[SipStopPlay] BYE response failed:", play.DeviceID, play.ChannelID, "err:", err)
 			play.Msg = err.Error()
 		} else {
 			play.Status = 1

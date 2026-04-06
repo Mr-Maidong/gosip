@@ -54,6 +54,32 @@ type Streams struct {
 	Resp *sip.Response `json:"-" gorm:"-"`
 }
 
+// IsStreamValid 验证流是否有效
+// 返回 true=有效，false=已失效
+func IsStreamValid(stream *Streams) bool {
+	// 1. 检查本地状态
+	if stream.Status != 0 || stream.Stop {
+		logrus.Debugln("[StreamValidate] stream status invalid:", stream.StreamID)
+		return false
+	}
+
+	// 2. 检查设备是否在线
+	if _, ok := _activeDevices.Get(stream.DeviceID); !ok {
+		logrus.Debugln("[StreamValidate] device offline:", stream.DeviceID)
+		return false
+	}
+
+	// 3. 依赖 ZLM 判断（最可靠）
+	rtpInfo := zlmGetMediaInfo(stream.StreamID)
+	if !rtpInfo.Exist {
+		logrus.Debugln("[StreamValidate] stream not exist in ZLM:", stream.StreamID)
+		return false
+	}
+
+	logrus.Debugln("[StreamValidate] stream is valid:", stream.StreamID)
+	return true
+}
+
 // 当前系统中存在的流列表
 type streamsList struct {
 	// key=ssrc value=PlayParams  播放对应的PlayParams 用来发送bye获取tag，callid等数据
