@@ -10,7 +10,7 @@ func Init(r *gin.Engine) {
 	// 中间件
 	r.Use(middleware.CORS())
 	r.Use(middleware.Auth) // 认证中间件（验证用户身份）
-	
+
 	// 健康检查接口（无需鉴权）
 	r.GET("/api/v1/health", api.HealthCheck)
 

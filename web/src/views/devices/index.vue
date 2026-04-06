@@ -77,7 +77,6 @@
       :data-source="devices"
       :loading="loading"
       :pagination="pagination"
-      :scroll="{ y: `calc(100vh - 334px)` }"
       :row-selection="batchMode ? { selectedRowKeys, onChange: handleSelectionChange } : null"
       :row-key="record => record.id"
       class="devices-table"
