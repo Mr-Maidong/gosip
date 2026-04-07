@@ -19,5 +19,7 @@ export default defineConfig({
         javascriptEnabled: true
       }
     }
-  }
+  },
+  // PostCSS 配置会自动读取 postcss.config.js
+  // 这里不需要额外配置
 })

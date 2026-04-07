@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 可以在这里添加自定义组件样式 */
+@layer components {
+  /* 示例：自定义按钮样式 */
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-white rounded hover:bg-blue-600 transition-colors border-none;
+  }
+}
