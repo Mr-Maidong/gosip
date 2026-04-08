@@ -42,18 +42,18 @@ func SipTalk(data *Streams) (*Streams, error) {
 		// GB28181推流
 		ssrcLock.Lock()
 		data.ssrc = getSSRC(data.T)
-		data.StreamID = ssrc2stream(data.ssrc)
+		data.StreamID = fmt.Sprintf("talk_%s", data.ChannelID)
 
-		// 在 ZLM 中开启 RTP 服务器，指定自定义 streamId
+		// 在 ZLM 中开启 RTP 服务器，指定自定义 streamId（对讲使用被动模式）
 		rtpReq := zlmStartSendRtpPassivReq{
 			Vhost:  "__defaultVhost__", // 默认虚拟主机
 			App:    "rtp",              // App 名称
-			Stream: "audio",            // 流 ID
+			Stream: data.StreamID,      // 格式: talk_channelId
 			Ssrc:   "0",                // ssrc
 		}
 
 		rtpResp, err := zlmStartSendRtpPassive(rtpReq)
-		logrus.Infoln("开启 ZLM RTP 服务器", rtpReq, rtpResp)
+		logrus.Infoln("开启 ZLM RTP 服务器（对讲）", rtpReq, rtpResp)
 		if err != nil {
 			ssrcLock.Unlock()
 			return nil, fmt.Errorf("开启 ZLM RTP 服务器失败: %v", err)
@@ -207,6 +207,16 @@ func SipStopTalk(ssrc string) {
 		resp := talk.Resp
 		u, ok := _activeDevices.Load(talk.DeviceID)
 		if !ok {
+			// 设备已离线，直接清理
+			logrus.Debugln("[SipStopTalk] device offline, skip BYE:", talk.DeviceID)
+			talk.Status = 1
+			talk.Stop = true
+			talk.Msg = "设备已离线"
+			db.Save(db.DBClient, talk)
+			StreamList.Response.Delete(ssrc)
+			if talk.T == 0 {
+				StreamList.Succ.Delete(talk.ChannelID)
+			}
 			return
 		}
 		user := u.(Devices)
@@ -221,20 +231,32 @@ func SipStopTalk(ssrc string) {
 			tx, err = srv.Request(req) // 默认UDP
 		}
 		if err != nil {
-			logrus.Warningln("sipStopPlay bye fail.id:", talk.DeviceID, talk.ChannelID, "err:", err)
+			// 发送失败（如连接断开），直接清理
+			logrus.Warningln("[SipStopTalk] send BYE failed:", talk.DeviceID, talk.ChannelID, "err:", err)
+			talk.Status = 1
+			talk.Stop = true
+			talk.Msg = "发送 BYE 失败: " + err.Error()
+			db.Save(db.DBClient, talk)
+			StreamList.Response.Delete(ssrc)
+			if talk.T == 0 {
+				StreamList.Succ.Delete(talk.ChannelID)
+			}
+			return
 		}
+
+		// 等待响应
 		_, err = sipResponse(tx)
 		if err != nil {
-			logrus.Warnln("sipStopPlay response fail", err)
+			logrus.Warnln("[SipStopTalk] BYE response failed:", talk.DeviceID, talk.ChannelID, "err:", err)
 			talk.Msg = err.Error()
 		} else {
 			talk.Status = 1
 			talk.Stop = true
 		}
-		// db.Save(db.DBClient, play)
+		db.Save(db.DBClient, talk)
 	}
-	// StreamList.Response.Delete(ssrc)
-	// if play.T == 0 {
-	// 	StreamList.Succ.Delete(play.ChannelID)
-	// }
+	StreamList.Response.Delete(ssrc)
+	if talk.T == 0 {
+		StreamList.Succ.Delete(talk.ChannelID)
+	}
 }

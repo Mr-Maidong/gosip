@@ -67,6 +67,12 @@ func handlerMessage(req *sip.Request, tx *sip.Transaction) {
 		sipMessageDeviceInfo(u, body)
 		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil))
 		return
+	default:
+		// 打印未处理的消息类型，用于调试
+		logrus.Warnf("[Notify] 收到未处理的消息类型: CmdType=%s, DeviceID=%s, Body=%s",
+			message.CmdType, u.DeviceID, string(body))
+		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil))
+		return
 	}
 	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil))
 }

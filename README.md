@@ -129,3 +129,4 @@ redis-server --notify-keyspace-events Ex
 
 ### 语音对讲
 ![asciicast](./demo/对讲交互.png)
+  测试推流命令: ffmpeg -re -stream_loop -1 -i .\in.mp3 -acodec pcm_alaw -ar 8000 -ac 1 -f rtsp rtsp://192.168.1.192:8554/rtp/talk_34020000001310000001
