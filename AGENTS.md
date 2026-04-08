@@ -247,6 +247,66 @@ if db.RecordNotFound(err) { ... }
 - Default admin: `admin` / `admin123`
 - Cron jobs every 5 min: `sipapi.CheckStreams`, `sipapi.ClearFiles`
 - Config: `config.yml`
+- **Logging**: Separate log files for SIP (`logs/gb28181.log`), SQL (`logs/sql.log`), and console output
+
+---
+
+## Logging System
+
+### Log Files
+
+| File | Content | Level Control |
+|------|---------|---------------|
+| `logs/gb28181.log` | SIP protocol interactions | Follows `logger` config |
+| `logs/sql.log` | SQL queries | Enabled on `debug` or `trace` |
+| Console | Application runtime logs | Follows `logger` config |
+
+### Architecture
+
+**SIP Logging**:
+- Uses `utils.SIPLoggerHook` (function pointer injection) to avoid circular imports
+- Hook is set in `main.go`: `utils.SIPLoggerHook = m.LogSIPMessage`
+- `Gb28181Logger` uses `CustomFormatter` for SIP message formatting with box-drawing characters
+
+**SQL Logging**:
+- Uses custom `sqlLogWriter` (io.Writer) to intercept GORM logs
+- Formats SQL logs with Location, Duration, and SQL statement
+- Configured in `m/config.go`: `db.DBClient.SetLogger(log.New(GetSqlLogWriter(), "", 0))`
+
+### Log Level Control
+
+Configure `logger` in `config.yml`:
+```yaml
+logger: debug  # trace, debug, info, warn, error
+```
+
+| Level | SIP Logs | SQL Logs | App Logs |
+|-------|----------|----------|----------|
+| `trace` | ✅ Detailed SIP messages | ✅ All SQL queries | ✅ All |
+| `debug` | ✅ SIP messages | ✅ All SQL queries | ✅ Debug+ |
+| `info` | ❌ Only important info | ❌ Disabled | ✅ Info+ |
+| `warn` | ❌ Only warnings | ❌ Disabled | ✅ Warn+ |
+| `error` | ❌ Only errors | ❌ Disabled | ✅ Error+ |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `m/logger.go` | Log initializers, formatters, level control |
+| `m/config.go` | Config loading, log level setup, GORM log config |
+| `utils/logger.go` | SIP log hook definition (avoids circular imports) |
+| `main.go` | Hook injection (`utils.SIPLoggerHook = m.LogSIPMessage`) |
+
+### Usage
+
+**Log SIP Messages**:
+```go
+utils.LogSIPRequest(source, method, txKey, message)
+utils.LogSIPResponse(source, txKey, message)
+utils.LogSIPSend(msgType, destination, txKey, message)
+```
+
+**Log SQL Queries**: Automatically handled by GORM when `logger` is `debug` or `trace`.
 
 ---
 

@@ -1,6 +1,7 @@
 package m
 
 import (
+	"log"
 	"net"
 	"strings"
 	"time"
@@ -122,6 +123,10 @@ func LoadConfig() {
 	// logrus.Infof("config :%+v", MConfig)
 	level, _ := logrus.ParseLevel(MConfig.LogLevel)
 	logrus.SetLevel(level)
+
+	// 设置 Gb28181Logger 的日志级别（从配置文件读取）
+	SetLogLevel(MConfig.LogLevel)
+
 	db.DBClient, err = db.Open(MConfig.DB)
 	if err != nil {
 		logrus.Fatalln("init db error:", err)
@@ -129,7 +134,11 @@ func LoadConfig() {
 	db.DBClient.SetNowFuncOverride(func() interface{} {
 		return time.Now().Unix()
 	})
-	db.DBClient.LogMode(true)
+	// 配置 GORM 日志：将输出重定向到自定义的 SQL 日志写入器
+	sqlWriter := GetSqlLogWriter()
+	sqlLog := log.New(sqlWriter, "", 0)
+	db.DBClient.SetLogger(sqlLog)
+	db.DBClient.LogMode(MConfig.LogLevel == "debug" || MConfig.LogLevel == "trace")
 	go db.KeepLive(db.DBClient, time.Minute)
 
 	MConfig.MOD = strings.ToUpper(MConfig.MOD)

@@ -396,6 +396,114 @@ if db.RecordNotFound(err) { ... }
 
 ---
 
+## 日志规范
+
+### 日志文件分离
+
+系统使用分离的日志文件记录不同类型的信息：
+
+| 日志文件 | 内容 | 级别控制 |
+|---------|------|---------|
+| `logs/gb28181.log` | SIP 协议交互日志 | 跟随 `logger` 配置 |
+| `logs/sql.log` | SQL 查询日志 | `debug` 或 `trace` 开启 |
+| 控制台 | 应用运行日志 | 跟随 `logger` 配置 |
+
+### 日志架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  m/logger.go                                            │
+│  ├── Gb28181Logger (SIP 日志记录器)                     │
+│  │   └── CustomFormatter (SIP 消息框线格式化)            │
+│  ├── sqlLogWriter (自定义 io.Writer)                    │
+│  │   └── formatGormLog() (SQL 日志格式化)                │
+│  └── SetLogLevel() (根据配置设置日志级别)                 │
+└─────────────────────────────────────────────────────────┘
+                          ↑
+                          │ 注入
+                          │
+┌─────────────────────────────────────────────────────────┐
+│  main.go init()                                         │
+│  utils.SIPLoggerHook = m.LogSIPMessage                   │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+                          │ 调用
+                          │
+┌─────────────────────────────────────────────────────────┐
+│  utils/logger.go                                        │
+│  ├── SIPLoggerHook (钩子函数指针)                        │
+│  ├── LogSIPMessage() → 调用 SIPLoggerHook               │
+│  ├── LogSIPRequest()                                    │
+│  ├── LogSIPResponse()                                   │
+│  └── LogSIPSend()                                       │
+└─────────────────────────────────────────────────────────┘
+                          ↑
+                          │ 使用
+                          │
+┌─────────────────────────────────────────────────────────┐
+│  m/config.go                                            │
+│  ├── LoadConfig() 读取配置                               │
+│  ├── SetLogLevel() 设置日志级别                          │
+│  └── GetSqlLogWriter() 配置 GORM 日志写入器               │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 日志级别控制
+
+在 `config.yml` 中配置 `logger` 字段：
+
+```yaml
+logger: debug  # trace, debug, info, warn, error
+```
+
+| 级别 | SIP 日志 | SQL 日志 | 应用日志 |
+|------|---------|---------|---------|
+| `trace` | ✅ 详细 SIP 消息 | ✅ 所有 SQL 查询 | ✅ 全部 |
+| `debug` | ✅ SIP 消息 | ✅ 所有 SQL 查询 | ✅ Debug+ |
+| `info` | ❌ 仅重要信息 | ❌ 关闭 | ✅ Info+ |
+| `warn` | ❌ 仅警告 | ❌ 关闭 | ✅ Warn+ |
+| `error` | ❌ 仅错误 | ❌ 关闭 | ✅ Error+ |
+
+### 日志格式示例
+
+#### SIP 日志 (logs/gb28181.log)
+
+使用 `CustomFormatter` 自动格式化包含 SIP 消息的日志：
+
+```
+2026-04-08 10:30:15 [DEBUG] [handler.go:57] receive request from: 192.168.1.100:5060, method: MESSAGE, txKey: abc123 message: 
+┌─ SIP Message ─────────────────────────────────────────────────────────────────┐
+│ MESSAGE sip:server@192.168.1.1 SIP/2.0
+│ From: <sip:device@192.168.1.100>
+│ ...
+└───────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### SQL 日志 (logs/sql.log)
+
+使用 `sqlLogWriter` 格式化 GORM 日志：
+
+```
+┌─ SQL ─────────────────────────────────────────────────────────────────┐
+│ Location: 
+│   C:/Users/.../gorm.go:123
+│   D:/Workbase/gosip/api/middleware/auth.go:62
+│ Duration: 1.2453ms
+│ SQL: SELECT * FROM `users` WHERE `users`.`deltime` IS NULL AND ((username = ?)) ORDER BY `users`.`id` ASC LIMIT 1
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 关键文件
+
+| 文件 | 说明 |
+|------|------|
+| `m/logger.go` | 日志初始化器、格式化逻辑、日志级别控制 |
+| `m/config.go` | 配置加载、日志级别设置、GORM 日志配置 |
+| `utils/logger.go` | SIP 日志钩子定义，避免循环导入 |
+| `main.go` | 钩子注入 (`utils.SIPLoggerHook = m.LogSIPMessage`) |
+
+---
+
 ## AI 代理开发经验
 
 ### Skill 使用指引

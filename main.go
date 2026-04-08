@@ -174,6 +174,8 @@ func init() {
 			logrus.Infoln("Init redis ok")
 		}
 	}
+	// 注入 SIP 日志钩子，复用 m/logger.go 中的 Gb28181Logger
+	utils.SIPLoggerHook = m.LogSIPMessage
 	_cron()
 }
 
