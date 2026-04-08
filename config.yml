@@ -10,7 +10,7 @@ udp: 0.0.0.0:55060 # sip 服务器 udp 端口
 tcp: 0.0.0.0:55060 # sip 服务器 tcp 端口
 api: 0.0.0.0:8090 # sip 服务 restfulapi 端口
 secret: z9hG4bK1233983766 # restful 接口验证 key 验证请求使用
-logger: debug
+logger: debug # trace debug info warn error
 jwt:
   token_expire: 7 # JWT Token 有效期（天），默认 7 天
 media:

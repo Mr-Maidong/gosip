@@ -35,9 +35,6 @@ func Start() {
 	go srv.ListenUDPServer(config.UDP)
 }
 
-// MODDEBUG MODDEBUG
-var MODDEBUG = "DEBUG"
-
 // ActiveDevices 记录当前活跃设备，请求播放时设备必须处于活跃状态
 type ActiveDevices struct {
 	sync.Map

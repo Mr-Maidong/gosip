@@ -79,7 +79,6 @@ func handlerMessage(req *sip.Request, tx *sip.Transaction) {
 
 func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 	// 判断是否存在授权字段
-	logrus.Debugln("req:", req)
 	if hdrs := req.GetHeaders("Authorization"); len(hdrs) > 0 {
 		fromUser, ok := parserDevicesFromReqeust(req)
 		if !ok {
@@ -164,8 +163,6 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 
 // handlerNotify 处理NOTIFY请求
 func handlerNotify(req *sip.Request, tx *sip.Transaction) {
-	logrus.Debugln("收到NOTIFY请求:", req)
-
 	// 解析设备信息
 	fromUser, ok := parserDevicesFromReqeust(req)
 	if !ok {
@@ -207,8 +204,6 @@ func handlerNotify(req *sip.Request, tx *sip.Transaction) {
 
 // handlerBye 处理BYE请求
 func handlerBye(req *sip.Request, tx *sip.Transaction) {
-	logrus.Debugln("收到BYE请求:", req)
-
 	// 解析设备信息
 	fromUser, ok := parserDevicesFromReqeust(req)
 	if !ok {
@@ -255,8 +250,6 @@ func handlerBye(req *sip.Request, tx *sip.Transaction) {
 
 // handlerOptions 处理OPTIONS请求
 func handlerOptions(req *sip.Request, tx *sip.Transaction) {
-	logrus.Debugln("收到OPTIONS请求:", req)
-
 	// 解析设备信息
 	fromUser, ok := parserDevicesFromReqeust(req)
 	if !ok {
