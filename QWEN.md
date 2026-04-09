@@ -95,11 +95,11 @@ go mod download
 # 运行开发模式
 go run main.go
 
-# 构建 (当前平台)
-go build -v -o srv
+# 构建 (不自动构建)
+go build -v -o dist
 
 # 构建 (Linux)
-GOOS=linux go build -v -o srv
+GOOS=linux go build -v -o dist
 
 # 格式化与检查 (提交前必须执行)
 go fmt ./...
@@ -501,6 +501,48 @@ logger: debug  # trace, debug, info, warn, error
 | `m/config.go` | 配置加载、日志级别设置、GORM 日志配置 |
 | `utils/logger.go` | SIP 日志钩子定义，避免循环导入 |
 | `main.go` | 钩子注入 (`utils.SIPLoggerHook = m.LogSIPMessage`) |
+
+---
+
+### ZLMediaKit Webhook 配置
+
+**重要**：ZLMediaKit 的 webhook 必须配置为此项目的 RESTful API 地址，否则部分功能（如流状态回调）无法正常使用。
+
+在 ZLMediaKit 的配置文件 (`config.ini`) 中设置：
+
+```ini
+[hook]
+enable=1
+timeoutSec=10
+# ZLM 回调地址，指向 GoSIP 的 API 地址
+on_flow_report=http://192.168.1.192:8090/zlm/webhook/on_flow_report
+on_http_access=http://192.168.1.192:8090/zlm/webhook/on_http_access
+on_play=http://192.168.1.192:8090/zlm/webhook/on_play
+on_publish=http://192.168.1.192:8090/zlm/webhook/on_publish
+on_record_mp4=http://192.168.1.192:8090/zlm/webhook/on_record_mp4
+on_rtp_server_timeout=http://192.168.1.192:8090/zlm/webhook/on_rtp_server_timeout
+on_rtsp_auth=http://192.168.1.192:8090/zlm/webhook/on_rtsp_auth
+on_rtsp_realm=http://192.168.1.192:8090/zlm/webhook/on_rtsp_realm
+on_send_rtp_stopped=http://192.168.1.192:8090/zlm/webhook/on_send_rtp_stopped
+on_server_exited=http://192.168.1.192:8090/zlm/webhook/on_server_exited
+on_server_started=http://192.168.1.192:8090/zlm/webhook/on_server_started
+on_shell_login=http://192.168.1.192:8090/zlm/webhook/on_shell_login
+on_stream_changed=http://192.168.1.192:8090/zlm/webhook/on_stream_changed
+on_stream_none_reader=http://192.168.1.192:8090/zlm/webhook/on_stream_none_reader
+on_stream_not_found=http://192.168.1.192:8090/zlm/webhook/on_stream_not_found
+```
+
+**关键回调接口说明**：
+
+| 回调事件 | 用途 |
+|---------|------|
+| `on_server_started` | ZLM 启动时通知，更新媒体服务器状态 |
+| `on_stream_changed` | 流注册/注销通知，用于流状态管理和清理 |
+| `on_stream_none_reader` | 无人观看通知，自动关闭流 |
+| `on_stream_not_found` | 流不存在通知，可触发重新推流 |
+| `on_publish` | 推流鉴权和配置（HLS/RTMP 转码开关）|
+| `on_play` | 播放鉴权 |
+| `on_record_mp4` | 录制完成通知 |
 
 ---
 
