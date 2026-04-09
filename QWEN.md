@@ -544,8 +544,5 @@ logger: debug  # trace, debug, info, warn, error
 ---
 
 ## 相关资源
-
-- **QQ 交流群**: 542509000
-- **联系 QQ**: 35929310 (@bzfj)
 - **ZLMediaKit Docker**: https://hub.docker.com/repository/docker/panjjo/zlmediakit
 - **Swagger 文档**: http://localhost:8090/swagger/index.html
