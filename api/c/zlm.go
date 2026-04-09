@@ -105,8 +105,8 @@ func zlmStreamChanged(c *gin.Context) {
 				sipapi.SyncDevicesCodec(ssrc, params.DeviceID)
 			} else {
 				// ssrc不存在，关闭流
-				sipapi.SipStopPlay(ssrc)
-				logrus.Infoln("[StreamChanged] stream not found on register, closing:", req.Stream)
+				// sipapi.SipStopPlay(ssrc)
+				logrus.Infoln("[StreamChanged] new stream not found on system", req.Stream)
 			}
 		}
 	} else {

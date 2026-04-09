@@ -156,11 +156,18 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 	s = msg.Append(s)
 	// appending session to byte buffer
 	b = s.AppendTo(b)
+	// 根据设备传输协议设置 Via 的 Transport
+	transport := "UDP"
+	if strings.ToLower(device.TransPort) == "tcp" {
+		transport = "TCP"
+	}
+
 	uri, _ := sip.ParseURI(channel.URIStr)
 	channel.addr = &sip.Address{URI: uri}
 	_serverDevices.addr.Params.Add("tag", sip.String{Str: utils.RandString(20)})
 	hb := sip.NewHeaderBuilder().SetTo(channel.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{
-		Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
+		Transport: transport,
+		Params:    sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
 	}).SetContentType(&sip.ContentTypeSDP).SetMethod(sip.INVITE).SetContact(_serverDevices.addr)
 	req := sip.NewRequest("", sip.INVITE, channel.addr.URI, sip.DefaultSipVersion, hb.Build(), b)
 	req.SetDestination(device.source)
