@@ -105,6 +105,7 @@ func DevicesUpdate(c *gin.Context) {
 		Host         string `json:"host"`
 		Manufacturer string `json:"manufacturer"`
 		Model        string `json:"model"`
+		Subscribe    db.M   `json:"subscribe"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		m.JsonResponse(c, m.StatusParamsERR, "参数错误")
@@ -126,10 +127,40 @@ func DevicesUpdate(c *gin.Context) {
 	if req.Model != "" {
 		device.Model = req.Model
 	}
+
+	// 检查订阅设置是否变化
+	subscribeChanged := false
+	if req.Subscribe != nil {
+		// 检查 position 订阅是否新启用
+		oldPositionEnabled := false
+		if device.Subscribe != nil {
+			if v, ok := device.Subscribe["position"]; ok {
+				oldPositionEnabled = v == true
+			}
+		}
+		newPositionEnabled := false
+		if v, ok := req.Subscribe["position"]; ok {
+			newPositionEnabled = v == true
+		}
+
+		// 如果从 false/nil 变为 true，需要发起订阅
+		if !oldPositionEnabled && newPositionEnabled {
+			subscribeChanged = true
+		}
+
+		device.Subscribe = req.Subscribe
+	}
+
 	if err := db.Save(db.DBClient, device); err != nil {
 		m.JsonResponse(c, m.StatusDBERR, err)
 		return
 	}
+
+	// 如果订阅设置变化且位置订阅新启用，立即发起订阅
+	if subscribeChanged {
+		go sipapi.CheckAndSubscribe(*device)
+	}
+
 	m.JsonResponse(c, m.StatusSucc, device)
 }
 
