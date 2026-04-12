@@ -212,13 +212,29 @@
               type="link"
               size="small"
               :loading="record.starting"
+              :disabled="record.hasStream"
               @click="handleStartLive(record)"
             >
               直播
             </a-button>
+            <a-popconfirm
+              title="确定停止直播吗？"
+              @confirm="handleStopLive(record)"
+            >
+              <a-button
+                type="link"
+                size="small"
+                danger
+                :loading="record.stopping"
+                :disabled="!record.hasStream"
+              >
+                停止
+              </a-button>
+            </a-popconfirm>
             <a-button
               type="link"
               size="small"
+              disabled
             >
               回放
             </a-button>
@@ -268,7 +284,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { getDevices, createDevice, deleteDevice, syncChannels } from '@/api/device'
 import { getChannels } from '@/api/channel'
-import { startStream } from '@/api/stream'
+import { startStream, stopStream } from '@/api/stream'
 import { message } from 'ant-design-vue'
 import { DownOutlined, ReloadOutlined, CheckOutlined, BorderOutlined, PlusOutlined, DeleteOutlined, PlaySquareOutlined, ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
 import { LivePlayer } from '@/components'
@@ -438,7 +454,7 @@ const fetchChannels = async () => {
       filters: JSON.stringify([{ field_name: 'deviceid', opertator: '=', value: currentDevice.value.deviceid }])
     }
     const res = await getChannels(params)
-    channels.value = (res.data?.list || []).map(item => ({ ...item, starting: false }))
+    channels.value = (res.data?.list || []).map(item => ({ ...item, starting: false, stopping: false, hasStream: false }))
     pagination.total = res.data?.total || 0
   } catch (error) {
     // error handled by request interceptor
@@ -504,6 +520,10 @@ const handleEditSuccess = async formData => {
     }
     if (formData.model !== undefined) {
       data.model = formData.model
+    }
+    // 订阅设置
+    if (formData.subscribe) {
+      data.subscribe = formData.subscribe
     }
     await request({
       url: `/v1/devices/${formData.deviceid}`,
@@ -579,6 +599,22 @@ const handleStartLive = async record => {
     liveModalVisible.value = false
   } finally {
     record.starting = false
+  }
+}
+
+const handleStopLive = async record => {
+  record.stopping = true
+  try {
+    await stopStream(record.channelid)
+    message.success('直播已停止')
+    record.hasStream = false
+    liveModalVisible.value = false
+    liveUrl.value = ''
+    fetchChannels()
+  } catch (error) {
+    message.error('停止直播失败')
+  } finally {
+    record.stopping = false
   }
 }
 
