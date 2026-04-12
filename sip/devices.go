@@ -415,7 +415,8 @@ func transDeviceStatus(status string) string {
 
 // MobilePosition 设备位置信息
 type MobilePosition struct {
-	DeviceID  string  `xml:"DeviceID"`
+	DeviceID  string  `xml:"DeviceID"` // 上报者 ID (通常是 NVR/网关)
+	TargetID  string  `xml:"TargetID"` // 目标 ID (具体是哪个设备/通道)
 	Time      string  `xml:"Time"`
 	Longitude float64 `xml:"Longitude"`
 	Latitude  float64 `xml:"Latitude"`

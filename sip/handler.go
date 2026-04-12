@@ -215,15 +215,45 @@ func parseMobilePosition(deviceID string, body []byte) {
 		}
 	}
 
-	logrus.Infoln("收到设备位置上报:", deviceID,
-		"经度:", pos.Longitude,
-		"纬度:", pos.Latitude,
-		"速度:", pos.Speed,
-		"方向:", pos.Direction,
-		"时间:", pos.Time)
+	// 判断归属 ID：优先使用 TargetID，如果没有则使用 DeviceID
+	locationID := pos.TargetID
+	if locationID == "" {
+		locationID = pos.DeviceID
+	}
 
-	// TODO: 存储到数据库或 Redis
-	// 可以通过 db.Save 或 db.RedisClient 存储位置信息
+	// 1. 尝试在通道表中查找
+	channel := Channels{ChannelID: locationID}
+	if err := db.Get(db.DBClient, &channel); err == nil {
+		logrus.Infoln("收到【通道】位置上报:", locationID,
+			"经度:", pos.Longitude,
+			"纬度:", pos.Latitude,
+			"时间:", pos.Time)
+		// TODO: 更新 channels 表的位置信息
+		// db.DBClient.Model(&Channels{}).Where("channelid = ?", locationID).Updates(map[string]interface{}{
+		//     "longitude": pos.Longitude,
+		//     "latitude":  pos.Latitude,
+		//     "gps_time":  pos.Time,
+		// })
+		return
+	}
+
+	// 2. 尝试在设备表中查找
+	device := Devices{DeviceID: locationID}
+	if err := db.Get(db.DBClient, &device); err == nil {
+		logrus.Infoln("收到【设备】位置上报:", locationID,
+			"经度:", pos.Longitude,
+			"纬度:", pos.Latitude,
+			"时间:", pos.Time)
+		// TODO: 更新 devices 表的位置信息
+		// db.DBClient.Model(&Devices{}).Where("deviceid = ?", locationID).Updates(map[string]interface{}{
+		//     "longitude": pos.Longitude,
+		//     "latitude":  pos.Latitude,
+		//     "gps_time":  pos.Time,
+		// })
+		return
+	}
+
+	logrus.Warnln("收到位置上报，但未找到对应主体:", locationID)
 }
 
 // handlerBye 处理BYE请求
