@@ -1355,7 +1355,7 @@ func (ua *UserAgentHeader) Equals(other interface{}) bool {
 
 // ==================   AllowHeader   ================
 
-var defaultAllowMethods = &AllowHeader{INVITE, ACK, CANCEL, MESSAGE, REGISTER}
+var defaultAllowMethods = &AllowHeader{INVITE, ACK, CANCEL, MESSAGE, REGISTER, SUBSCRIBE}
 
 // AllowHeader AllowHeader
 type AllowHeader []RequestMethod
