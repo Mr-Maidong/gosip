@@ -115,6 +115,8 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 					user.Regist = true
 					db.DBClient.Save(&user)
 					logrus.Infoln("new user regist,id:", user.DeviceID)
+					// 检查并发送订阅
+					go CheckAndSubscribe(user)
 				}
 				if db.RedisClient != nil {
 					if err := db.RefreshDeviceRedis(user.DeviceID); err != nil {
@@ -170,26 +172,21 @@ func handlerNotify(req *sip.Request, tx *sip.Transaction) {
 		return
 	}
 
+	// 处理NOTIFY消息体（优先处理位置上报，不依赖注册状态）
+	if len, have := req.ContentLength(); have && !len.Equals(0) {
+		body := req.Body()
+		// 解析 MobilePosition 消息
+		parseMobilePosition(fromUser.DeviceID, body)
+	}
+
 	// 检查设备是否已注册
 	device, exists := _activeDevices.Get(fromUser.DeviceID)
 	if !exists {
-		// 设备未注册，返回401
-		logrus.Warnf("未注册设备发送NOTIFY: DeviceID=%s", fromUser.DeviceID)
-		resp := sip.NewResponseFromRequest("", req, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
+		// 设备未注册，返回200 OK（位置已处理）
+		logrus.Debugf("设备未注册，但已处理位置上报: DeviceID=%s", fromUser.DeviceID)
+		resp := sip.NewResponseFromRequest("", req, http.StatusOK, http.StatusText(http.StatusOK), nil)
 		tx.Respond(resp)
 		return
-	}
-
-	// 处理NOTIFY消息体（如果有的话）
-	if len, have := req.ContentLength(); have && !len.Equals(0) {
-		body := req.Body()
-		logrus.Debugf("NOTIFY消息体: DeviceID=%s, Body=%s", fromUser.DeviceID, string(body))
-
-		// 这里可以根据需要解析NOTIFY的具体内容
-		// 例如：设备状态变化、报警信息等
-
-		// 可以选择性地处理不同类型的NOTIFY消息
-		// 目前先简单记录日志
 	}
 
 	// 更新设备活跃状态
@@ -200,6 +197,33 @@ func handlerNotify(req *sip.Request, tx *sip.Transaction) {
 	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil))
 
 	logrus.Debugf("NOTIFY处理完成: DeviceID=%s", fromUser.DeviceID)
+}
+
+// parseMobilePosition 解析设备位置信息
+func parseMobilePosition(deviceID string, body []byte) {
+	pos := &MobilePosition{}
+	if err := utils.XMLDecode(body, pos); err != nil {
+		// 尝试 GBK 转 UTF-8 后再次解析
+		body, err = utils.GbkToUtf8(body)
+		if err != nil {
+			logrus.Debugln("MobilePosition gbk to utf8 fail:", err)
+			return
+		}
+		if err := utils.XMLDecode(body, pos); err != nil {
+			logrus.Debugln("MobilePosition parse fail:", err)
+			return
+		}
+	}
+
+	logrus.Infoln("收到设备位置上报:", deviceID,
+		"经度:", pos.Longitude,
+		"纬度:", pos.Latitude,
+		"速度:", pos.Speed,
+		"方向:", pos.Direction,
+		"时间:", pos.Time)
+
+	// TODO: 存储到数据库或 Redis
+	// 可以通过 db.Save 或 db.RedisClient 存储位置信息
 }
 
 // handlerBye 处理BYE请求

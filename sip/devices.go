@@ -58,6 +58,9 @@ type Devices struct {
 	PWD string `json:"pwd" gorm:"column:pwd"`
 	// Source
 	Source string `json:"source"  gorm:"column:source"`
+	// Subscribe 订阅设置 (JSON格式)
+	// 格式：{"position":true, "alarm":false}
+	Subscribe db.M `json:"subscribe" gorm:"column:subscribe;type:json"`
 
 	Sys m.SysInfo `json:"sysinfo" gorm:"-"`
 
@@ -408,4 +411,93 @@ func transDeviceStatus(status string) string {
 		return v
 	}
 	return status
+}
+
+// MobilePosition 设备位置信息
+type MobilePosition struct {
+	DeviceID  string  `xml:"DeviceID"`
+	Time      string  `xml:"Time"`
+	Longitude float64 `xml:"Longitude"`
+	Latitude  float64 `xml:"Latitude"`
+	Speed     float64 `xml:"Speed"`
+	Direction float64 `xml:"Direction"`
+	Altitude  float64 `xml:"Altitude"`
+}
+
+// SipSubscribe 发送订阅请求
+func SipSubscribe(device Devices, subscribeType string) {
+	if !device.Regist {
+		logrus.Debugln("设备未注册，跳过订阅:", device.DeviceID)
+		return
+	}
+
+	activeDevice, ok := _activeDevices.Get(device.DeviceID)
+	if !ok {
+		logrus.Debugln("设备不在线，跳过订阅:", device.DeviceID)
+		return
+	}
+
+	// 构建订阅请求 XML
+	xmlBody := fmt.Sprintf(`<?xml version="1.0" encoding="GB2312"?>
+<Query>
+<CmdType>MobilePosition</CmdType>
+<SN>%d</SN>
+<DeviceID>%s</DeviceID>
+<Interval>5</Interval>
+</Query>`, utils.RandInt(100000, 999999), device.DeviceID)
+
+	uri, _ := sip.ParseURI(activeDevice.URIStr)
+	activeDevice.addr = &sip.Address{URI: uri, Params: sip.NewParams()}
+
+	// 根据设备传输协议设置 Via 的 Transport
+	transport := "UDP"
+	if strings.ToLower(activeDevice.TransPort) == "tcp" {
+		transport = "TCP"
+	}
+
+	_serverDevices.addr.Params.Add("tag", sip.String{Str: utils.RandString(20)})
+	hb := sip.NewHeaderBuilder().SetToWithParam(activeDevice.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{
+		Transport: transport,
+		Params:    sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
+	}).SetContentType(&sip.ContentTypeXML).SetMethod(sip.SUBSCRIBE).SetContact(_serverDevices.addr)
+
+	req := sip.NewRequest("", sip.SUBSCRIBE, activeDevice.addr.URI, sip.DefaultSipVersion, hb.Build(), []byte(xmlBody))
+	req.SetDestination(activeDevice.source)
+	req.SetRecipient(activeDevice.addr.URI)
+	req.AppendHeader(&sip.GenericHeader{HeaderName: "Event", Contents: "presence"})
+	req.AppendHeader(&sip.GenericHeader{HeaderName: "Expires", Contents: "3600"})
+
+	var tx *sip.Transaction
+	var err error
+	if strings.ToLower(activeDevice.TransPort) == "tcp" {
+		tx, err = srv.RequestWithProtocol(req, "tcp")
+	} else {
+		tx, err = srv.Request(req)
+	}
+
+	if err != nil {
+		logrus.Warningln("发送订阅请求失败:", device.DeviceID, subscribeType, err)
+		return
+	}
+
+	response, err := sipResponse(tx)
+	if err != nil {
+		logrus.Warningln("订阅请求响应失败:", device.DeviceID, subscribeType, err)
+		return
+	}
+
+	logrus.Infoln("订阅成功:", device.DeviceID, subscribeType, response.StatusCode())
+}
+
+// CheckAndSubscribe 检查并发送订阅
+func CheckAndSubscribe(device Devices) {
+	if device.Subscribe == nil {
+		return
+	}
+
+	// 检查位置订阅
+	if pos, ok := device.Subscribe["position"]; ok && pos == true {
+		logrus.Infoln("发送位置订阅:", device.DeviceID)
+		go SipSubscribe(device, "position")
+	}
 }

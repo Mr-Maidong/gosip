@@ -22,13 +22,13 @@ func (rm RequestMethod) String() string {
 // It's nicer to avoid using raw strings to represent methods, so the following standard
 // method names are defined here as constants for convenience.
 const (
-	INVITE   RequestMethod = "INVITE"
-	ACK      RequestMethod = "ACK"
-	CANCEL   RequestMethod = "CANCEL"
-	BYE      RequestMethod = "BYE"
-	REGISTER RequestMethod = "REGISTER"
-	OPTIONS  RequestMethod = "OPTIONS"
-	// SUBSCRIBE RequestMethod = "SUBSCRIBE"
+	INVITE    RequestMethod = "INVITE"
+	ACK       RequestMethod = "ACK"
+	CANCEL    RequestMethod = "CANCEL"
+	BYE       RequestMethod = "BYE"
+	REGISTER  RequestMethod = "REGISTER"
+	OPTIONS   RequestMethod = "OPTIONS"
+	SUBSCRIBE RequestMethod = "SUBSCRIBE"
 	// REFER   RequestMethod = "REFER"
 	INFO    RequestMethod = "INFO"
 	MESSAGE RequestMethod = "MESSAGE"
