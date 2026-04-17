@@ -165,4 +165,8 @@ type DeviceUpdateRequest struct {
 	Manufacturer string `json:"manufacturer"`
 	// @Description 型号
 	Model string `json:"model"`
+	// @Description SIP 信令通讯 IP
+	SipIP string `json:"sipip"`
+	// @Description 设备接收媒体流 IP
+	StreamIP string `json:"streamip"`
 }

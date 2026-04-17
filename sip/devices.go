@@ -56,8 +56,12 @@ type Devices struct {
 	Regist bool `json:"regist"  gorm:"column:regist"`
 	// PWD 密码
 	PWD string `json:"pwd" gorm:"column:pwd"`
-	// Source
-	Source string `json:"source"  gorm:"column:source"`
+	// Source 设备发送地址（字符串）
+	Source string `json:"source" gorm:"column:source"`
+	// SipIP SIP 信令通讯 IP（优先使用）
+	SipIP string `json:"sipip" gorm:"column:sipip"`
+	// StreamIP 设备接收媒体流 IP（优先使用）
+	StreamIP string `json:"streamip" gorm:"column:streamip"`
 	// Subscribe 订阅设置 (JSON格式)
 	// 格式：{"position":true, "alarm":false}
 	Subscribe db.M `json:"subscribe" gorm:"column:subscribe;type:json"`

@@ -103,6 +103,8 @@ func DevicesUpdate(c *gin.Context) {
 		Name         string `json:"name"`
 		PWD          string `json:"pwd"`
 		Host         string `json:"host"`
+		SipIP        string `json:"sipip"`
+		StreamIP     string `json:"streamip"`
 		Manufacturer string `json:"manufacturer"`
 		Model        string `json:"model"`
 		Subscribe    db.M   `json:"subscribe"`
@@ -120,6 +122,12 @@ func DevicesUpdate(c *gin.Context) {
 	}
 	if req.Host != "" {
 		device.Host = req.Host
+	}
+	if req.SipIP != "" {
+		device.SipIP = req.SipIP
+	}
+	if req.StreamIP != "" {
+		device.StreamIP = req.StreamIP
 	}
 	if req.Manufacturer != "" {
 		device.Manufacturer = req.Manufacturer
