@@ -106,7 +106,17 @@ func LoadSYSInfo() {
 
 // 新增函数：基于 deviceId 和 channelId 生成 StreamID
 func generateStreamID(deviceID, channelID string) string {
-	return fmt.Sprintf("%s_%s", deviceID, channelID)
+	return fmt.Sprintf("live_%s_%s", deviceID, channelID)
+}
+
+// 生成回放流ID
+func generateReplayStreamID(deviceID, channelID string, startTime int64) string {
+	return fmt.Sprintf("replay_%s_%s_%d", deviceID, channelID, startTime)
+}
+
+// 生成对讲流ID
+func generateTalkStreamID(deviceID, channelID string) string {
+	return fmt.Sprintf("talk_%s_%s", deviceID, channelID)
 }
 
 // zlm接收到的ssrc为16进制。发起请求的ssrc为10进制

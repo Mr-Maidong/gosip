@@ -42,7 +42,7 @@ func SipTalk(data *Streams) (*Streams, error) {
 		// GB28181推流
 		ssrcLock.Lock()
 		data.ssrc = getSSRC(data.T)
-		data.StreamID = fmt.Sprintf("talk_%s", data.ChannelID)
+		data.StreamID = generateTalkStreamID(data.DeviceID, data.ChannelID)
 
 		// 在 ZLM 中开启 RTP 服务器，指定自定义 streamId（对讲使用被动模式）
 		rtpReq := zlmStartSendRtpPassivReq{
@@ -94,9 +94,13 @@ func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, err
 		b []byte
 	)
 	name := "Talk"
-	protocal := "TCP/RTP/AVP"
+	// 根据设备传输协议设置 SDP 协议
+	protocal := "RTP/AVP"
+	if strings.ToLower(device.TransPort) == "tcp" {
+		protocal = "TCP/RTP/AVP"
+	}
 
-	// 视频媒体描述
+	// 音频媒体描述
 	audio := sdp.Media{
 		Description: sdp.MediaDescription{
 			Type:    "audio",
@@ -138,8 +142,16 @@ func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, err
 	uri, _ := sip.ParseURI(channel.URIStr)
 	channel.addr = &sip.Address{URI: uri}
 	_serverDevices.addr.Params.Add("tag", sip.String{Str: utils.RandString(20)})
+
+	// 根据设备传输协议设置 Via 的 Transport
+	transport := "UDP"
+	if strings.ToLower(device.TransPort) == "tcp" {
+		transport = "TCP"
+	}
+
 	hb := sip.NewHeaderBuilder().SetTo(channel.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{
-		Params: sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
+		Transport: transport,
+		Params:    sip.NewParams().Add("branch", sip.String{Str: sip.GenerateBranch()}),
 	}).SetContentType(&sip.ContentTypeSDP).SetMethod(sip.INVITE).SetContact(_serverDevices.addr)
 	req := sip.NewRequest("", sip.INVITE, channel.addr.URI, sip.DefaultSipVersion, hb.Build(), b)
 	req.SetDestination(device.source)

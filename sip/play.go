@@ -51,8 +51,14 @@ func SipPlay(data *Streams) (*Streams, error) {
 		if data.StreamID == "" {
 			ssrcLock.Lock()
 			data.ssrc = getSSRC(data.T)
-			// data.StreamID = ssrc2stream(data.ssrc)
-			data.StreamID = generateStreamID(data.DeviceID, data.ChannelID)
+			// 根据直播/回放生成不同流ID
+			if data.T == 1 {
+				// 回放
+				data.StreamID = generateReplayStreamID(data.DeviceID, data.ChannelID, data.S.Unix())
+			} else {
+				// 直播
+				data.StreamID = generateStreamID(data.DeviceID, data.ChannelID)
+			}
 
 			// 在 ZLM 中开启 RTP 服务器，指定自定义 streamId
 			rtpReq := zlmOpenRtpServerReq{
