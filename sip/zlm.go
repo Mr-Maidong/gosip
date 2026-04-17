@@ -26,11 +26,11 @@ type zlmGetMediaListDataResp struct {
 	Tracks     []zlmGetMediaListTracks `json:"tracks"`
 }
 type zlmGetMediaListTracks struct {
-	Type    int `json:"codec_type"`
-	CodecID int `json:"codec_id"`
-	Height  int `json:"height"`
-	Width   int `json:"width"`
-	FPS     int `json:"fps"`
+	Type    int     `json:"codec_type"`
+	CodecID int     `json:"codec_id"`
+	Height  int     `json:"height"`
+	Width   int     `json:"width"`
+	FPS     float64 `json:"fps"`
 }
 
 // zlm 获取流列表信息
