@@ -136,7 +136,7 @@ func SyncDevicesCodec(ssrc, deviceid string) {
 					device.VF = transZLMDeviceVF(track.CodecID)
 					device.Height = track.Height
 					device.Width = track.Width
-					device.FPS = track.FPS
+					device.FPS = int(track.FPS)
 					db.Save(db.DBClient, &device)
 				} else {
 					logrus.Errorln("syncDevicesCodec deviceid not found,deviceid:", deviceid)
@@ -343,11 +343,20 @@ func sipMessageCatalog(_ Devices, body []byte) error {
 		logrus.Errorln("Message Unmarshal xml err:", err, "body:", string(body))
 		return err
 	}
+
+	if message.SumNum <= 0 {
+		return nil
+	}
+
+	// 更新同步时间（无论 SN 是多少，只要收到数据就更新）
+	catalogSyncState[message.DeviceID] = time.Now().Unix()
+
 	if message.SumNum > 0 {
 		for _, d := range message.Item {
-			channel := Channels{ChannelID: d.ChannelID, DeviceID: message.DeviceID}
+			var channel Channels
 			var err error
-			if err = db.Get(db.DBClient, &channel); err == nil {
+			// 使用 Unscoped 查询，忽略软删除标记，以便找回并更新被删除的通道
+			if err = db.DBClient.Unscoped().Where("channelid = ? AND deviceid = ?", d.ChannelID, message.DeviceID).First(&channel).Error; err == nil {
 				channel.Active = time.Now().Unix()
 				channel.URIStr = fmt.Sprintf("sip:%s@%s", d.ChannelID, _sysinfo.Region)
 				channel.Status = transDeviceStatus(d.Status)
@@ -356,12 +365,12 @@ func sipMessageCatalog(_ Devices, body []byte) error {
 				channel.Model = d.Model
 				channel.Owner = d.Owner
 				channel.CivilCode = d.CivilCode
-				// Address ip地址
 				channel.Address = d.Address
 				channel.Parental = d.Parental
 				channel.SafetyWay = d.SafetyWay
 				channel.RegisterWay = d.RegisterWay
 				channel.Secrecy = d.Secrecy
+				channel.DeletedAt = nil // 清除软删除标记（复活通道）
 				db.Save(db.DBClient, &channel)
 				go notify(notifyChannelsActive(channel))
 			} else if db.RecordNotFound(err) {
@@ -395,7 +404,42 @@ func sipMessageCatalog(_ Devices, body []byte) error {
 			}
 		}
 	}
+
+	// 停止之前的清理定时器
+	if timer, exists := catalogSyncTimers[message.DeviceID]; exists {
+		timer.Stop()
+	}
+
+	// 设置延迟清理任务：12 秒后如果没有新响应，则认为同步完成，执行清理
+	catalogSyncTimers[message.DeviceID] = time.AfterFunc(12*time.Second, func() {
+		if startTime, ok := catalogSyncState[message.DeviceID]; ok {
+			deletedCount := cleanOldChannels(message.DeviceID, startTime)
+			logrus.Infoln("[Catalog] 同步完成:", message.DeviceID, "清理旧通道数量:", deletedCount)
+			delete(catalogSyncState, message.DeviceID)
+			delete(catalogSyncTimers, message.DeviceID)
+		}
+	})
+
 	return nil
+}
+
+// catalogSyncState 记录 Catalog 同步状态
+var catalogSyncState = make(map[string]int64)        // deviceID -> syncStartTime
+var catalogSyncTimers = make(map[string]*time.Timer) // deviceID -> cleanup timer
+
+// cleanOldChannels 清理指定时间之前更新的通道（设置软删除标记）
+func cleanOldChannels(deviceID string, beforeTime int64) int {
+	now := time.Now().Unix()
+	result := db.DBClient.Model(&Channels{}).
+		Where("deviceid = ? AND uptime < ? AND deltime IS NULL", deviceID, beforeTime).
+		Update("deltime", now)
+
+	if result.Error != nil {
+		logrus.Errorln("[Catalog] 清理旧通道失败:", result.Error)
+		return 0
+	}
+
+	return int(result.RowsAffected)
 }
 
 var deviceStatusMap = map[string]string{
