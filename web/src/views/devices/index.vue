@@ -591,6 +591,9 @@ const handleStartLive = async record => {
     const res = await startStream(record.channelid, {})
     if (res.data) {
       liveUrl.value = res.data.wsflv || res.data.rtmp || ''
+      // 保存 streamid 用于停止直播
+      record.streamid = res.data.streamid
+      record.hasStream = true
       if (!liveUrl.value) {
         message.warning('未获取到播放地址')
       }
@@ -605,9 +608,12 @@ const handleStartLive = async record => {
 const handleStopLive = async record => {
   record.stopping = true
   try {
-    await stopStream(record.channelid)
+    // 使用 streamid 而不是 channelid
+    const streamId = record.streamid || record.channelid
+    await stopStream(streamId)
     message.success('直播已停止')
     record.hasStream = false
+    record.streamid = null
     liveModalVisible.value = false
     liveUrl.value = ''
     fetchChannels()
