@@ -3,7 +3,10 @@
     ref="containerRef"
     class="live-player-container"
   >
-    <a-spin :spinning="loading" class="player-spin" />
+    <a-spin
+      :spinning="loading"
+      class="player-spin"
+    />
   </div>
 </template>
 

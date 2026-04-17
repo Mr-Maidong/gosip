@@ -6,7 +6,8 @@
     width="700px"
     @cancel="handleCancel"
   >
-    <a-form style="margin-top: 20px;"
+    <a-form
+      style="margin-top: 20px;"
       :model="form"
       layout="vertical"
       @submit="handleSubmit"
@@ -42,15 +43,29 @@
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item
-              label="收流地址"
-              name="host"
+              label="信令地址"
+              name="sipip"
             >
               <a-input
-                v-model:value="form.host"
-                placeholder="如 192.168.1.100"
+                v-model:value="form.sipip"
+                placeholder="SIP 信令通讯 IP"
               />
             </a-form-item>
           </a-col>
+          <a-col :span="12">
+            <a-form-item
+              label="收流地址"
+              name="streamip"
+            >
+              <a-input
+                v-model:value="form.streamip"
+                placeholder="设备接收媒体流 IP"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
+
+        <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item
               label="厂商"
@@ -62,9 +77,6 @@
               />
             </a-form-item>
           </a-col>
-        </a-row>
-
-        <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item
               label="型号"
@@ -76,6 +88,9 @@
               />
             </a-form-item>
           </a-col>
+        </a-row>
+
+        <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item
               label="设备密码"
@@ -89,7 +104,7 @@
           </a-col>
         </a-row>
 
-        <a-divider style="margin-top: 8px;" />
+        <a-divider style="margin-top: 0px;" />
         <a-form-item
           label="订阅设置"
           name="subscribe"
@@ -195,6 +210,8 @@ const form = reactive({
   name: '',
   pwd: '',
   host: '',
+  sipip: '',
+  streamip: '',
   deviceId: '',
   manufacturer: '',
   model: '',
@@ -212,6 +229,8 @@ watch(
         form.name = props.device.name || ''
         form.pwd = ''
         form.host = props.device.host || ''
+        form.sipip = props.device.sipip || ''
+        form.streamip = props.device.streamip || ''
         form.manufacturer = props.device.manufacturer || ''
         form.model = props.device.model || ''
         // 解析订阅设置
@@ -237,6 +256,8 @@ const resetForm = () => {
   form.name = ''
   form.pwd = ''
   form.host = ''
+  form.sipip = ''
+  form.streamip = ''
   form.deviceId = ''
   form.manufacturer = ''
   form.model = ''

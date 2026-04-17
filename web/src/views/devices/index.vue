@@ -111,8 +111,11 @@
             >{{ record.devicetype }}</span>
           </span>
         </template>
-        <template v-else-if="column.key === 'host'">
-          <span class="host-cell">{{ record.host || '-' }}</span>
+        <template v-else-if="column.key === 'sipip'">
+          <span class="host-cell">{{ record.sipip || '-' }}</span>
+        </template>
+        <template v-else-if="column.key === 'streamip'">
+          <span class="host-cell">{{ record.streamip || '-' }}</span>
         </template>
         <template v-else-if="column.key === 'source'">
           <span class="host-cell">{{ record.source || '-' }}</span>
@@ -321,7 +324,7 @@ const deviceColumns = computed(() => [
   {
     title: '设备名称',
     key: 'name',
-    width: 200,
+    width: 180,
     ellipsis: true
   },
   {
@@ -343,15 +346,21 @@ const deviceColumns = computed(() => [
     ellipsis: true
   },
   {
+    title: '信令地址',
+    key: 'sipip',
+    width: 120,
+    ellipsis: true
+  },
+  {
     title: '收流地址',
-    key: 'host',
-    width: 140,
+    key: 'streamip',
+    width: 120,
     ellipsis: true
   },
   {
     title: '源地址',
     key: 'source',
-    width: 180,
+    width: 160,
     ellipsis: true
   },
   {
@@ -362,7 +371,7 @@ const deviceColumns = computed(() => [
   {
     title: '操作',
     key: 'action',
-    width: 180,
+    width: 200,
     fixed: 'right'
   }
 ])
@@ -514,6 +523,12 @@ const handleEditSuccess = async formData => {
     }
     if (formData.host !== undefined) {
       data.host = formData.host
+    }
+    if (formData.sipip !== undefined) {
+      data.sipip = formData.sipip
+    }
+    if (formData.streamip !== undefined) {
+      data.streamip = formData.streamip
     }
     if (formData.manufacturer !== undefined) {
       data.manufacturer = formData.manufacturer
