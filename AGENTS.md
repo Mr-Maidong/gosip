@@ -20,10 +20,10 @@ GoSIP (now YSIP) is a GB28181 SIP server for video surveillance systems. It work
 ### Go Server
 ```bash
 # Build (Linux)
-GOOS=linux go build -v -o srv
+GOOS=linux go build -v -o ysip
 
 # Build for current platform
-go build -v -o srv
+go build -v -o ysip
 
 # Run
 go run main.go

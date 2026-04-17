@@ -6,7 +6,7 @@ TAG:=1.0.6
 all: build docker push
 
 build:
-	GOOS=linux go build -v -o srv
+	GOOS=linux go build -v -o demo/ysip
 
 docker:
 	docker image rm -f ${GROUP}/${PROJECT}:${TAG}

@@ -1,5 +1,6 @@
 .vscode/*
 srv.exe
+srv
 .idea
 gosip
 node_modules
