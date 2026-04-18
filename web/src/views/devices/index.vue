@@ -168,7 +168,6 @@
       :data-source="channels"
       :loading="loading"
       :pagination="pagination"
-      :scroll="{ y: `calc(100vh - 334px)` }"
       :row-key="record => record.id"
       class="devices-table"
       @change="handleChannelTableChange"
@@ -210,7 +209,7 @@
           <span class="time-cell">{{ formatTime(record.active) }}</span>
         </template>
         <template v-else-if="column.key === 'action'">
-          <a-space>
+          <a-space :size="0">
             <a-button
               type="link"
               size="small"
@@ -346,18 +345,6 @@ const deviceColumns = computed(() => [
     ellipsis: true
   },
   {
-    title: '信令地址',
-    key: 'sipip',
-    width: 120,
-    ellipsis: true
-  },
-  {
-    title: '收流地址',
-    key: 'streamip',
-    width: 120,
-    ellipsis: true
-  },
-  {
     title: '源地址',
     key: 'source',
     width: 160,
@@ -371,7 +358,7 @@ const deviceColumns = computed(() => [
   {
     title: '操作',
     key: 'action',
-    width: 200,
+    width: 160,
     fixed: 'right'
   }
 ])

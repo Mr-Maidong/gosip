@@ -37,14 +37,37 @@ func sipMessageKeepalive(u Devices, body []byte) error {
 		}
 	}
 	if message.Status == "OK" {
-		// 更新时保留 StreamIP、SipIP 和 Regist（这些字段不在心跳消息中）
-		oldStreamIP := device.StreamIP
-		oldSipIP := device.SipIP
-		oldRegist := device.Regist
-		device = u
-		device.StreamIP = oldStreamIP
-		device.SipIP = oldSipIP
-		device.Regist = oldRegist
+		// 只更新 SIP 消息中实际存在的字段，其他字段保留原值
+		// 需要从 SIP 消息更新的字段
+		if u.Host != "" {
+			device.Host = u.Host
+		}
+		if u.Port != "" {
+			device.Port = u.Port
+		}
+		if u.Rport != "" {
+			device.Rport = u.Rport
+		}
+		if u.RAddr != "" {
+			device.RAddr = u.RAddr
+		}
+		if u.TransPort != "" {
+			device.TransPort = u.TransPort
+		}
+		if u.URIStr != "" {
+			device.URIStr = u.URIStr
+		}
+		if u.addr != nil {
+			device.addr = u.addr
+		}
+		if u.Source != "" {
+			device.Source = u.Source
+		}
+		if u.source != nil {
+			device.source = u.source
+		}
+		// 保留以下字段（这些字段不在 SIP 消息中）
+		// Regist、Online、StreamIP、SipIP、Name、PWD 等保持原值
 		device.Online = true
 		device.ActiveAt = time.Now().Unix()
 		_activeDevices.Store(u.DeviceID, device)
