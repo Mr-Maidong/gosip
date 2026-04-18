@@ -125,14 +125,14 @@ func formatGormLog(message string) string {
 func init() {
 	// 注意：此时配置文件尚未加载，设置一个默认级别（Trace）确保所有日志都能被记录
 	// LoadConfig() 执行后会根据配置文件覆盖此设置
-	
+
 	// 使用绝对路径，适配测试环境
 	logDir := "logs"
 	if absPath, err := filepath.Abs(logDir); err == nil {
 		logDir = absPath
 	}
 	os.MkdirAll(logDir, 0755)
-	
+
 	logFile, err := os.OpenFile(filepath.Join(logDir, "gb28181.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		panic("无法打开日志文件: " + err.Error())
