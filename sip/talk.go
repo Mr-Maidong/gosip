@@ -38,7 +38,16 @@ func SipTalk(data *Streams) (*Streams, error) {
 	default:
 		user, ok := _activeDevices.Get(channel.DeviceID)
 		if !ok {
+			// 检查是否从未注册（从数据库查询）
+			var dbDevice Devices
+			dbDevice.DeviceID = channel.DeviceID
+			if err := db.Get(db.DBClient, &dbDevice); err == nil && !dbDevice.Regist {
+				return nil, errors.New("设备未注册")
+			}
 			return nil, errors.New("设备已离线")
+		}
+		if !user.Regist {
+			return nil, errors.New("设备未注册")
 		}
 		// GB28181推流
 		ssrcLock.Lock()

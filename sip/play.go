@@ -40,13 +40,19 @@ func SipPlay(data *Streams) (*Streams, error) {
 		// 拉流
 
 	default:
-		// 推流模式要求设备在线且活跃
-		// if time.Now().Unix()-channel.Active > 30*60 || channel.Status != m.DeviceStatusON {
-		// 	return nil, errors.New("通道已离线")
-		// }
+		// 推流模式要求设备已注册且在线
 		user, ok := _activeDevices.Get(channel.DeviceID)
 		if !ok {
+			// 检查是否从未注册（从数据库查询）
+			var dbDevice Devices
+			dbDevice.DeviceID = channel.DeviceID
+			if err := db.Get(db.DBClient, &dbDevice); err == nil && !dbDevice.Regist {
+				return nil, errors.New("设备未注册")
+			}
 			return nil, errors.New("设备已离线")
+		}
+		if !user.Regist {
+			return nil, errors.New("设备未注册")
 		}
 		// GB28181推流
 		if data.StreamID == "" {

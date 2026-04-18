@@ -53,7 +53,9 @@ type Devices struct {
 	// ActiveAt 最后心跳检测时间
 	ActiveAt int64 `json:"active" gorm:"column:active"`
 	// Regist 是否注册
-	Regist bool `json:"regist"  gorm:"column:regist"`
+	Regist bool `json:"regist" gorm:"column:regist"`
+	// Online 是否在线
+	Online bool `json:"online" gorm:"column:online"`
 	// PWD 密码
 	PWD string `json:"pwd" gorm:"column:pwd"`
 	// Source 设备发送地址（字符串）

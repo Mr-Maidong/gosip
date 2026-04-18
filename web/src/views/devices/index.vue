@@ -89,10 +89,10 @@
             <span class="device-name">{{ record.name || record.deviceid }}</span>
           </span>
         </template>
-        <template v-else-if="column.key === 'regist'">
+        <template v-else-if="column.key === 'status'">
           <a-badge
-            :status="record.regist ? 'success' : 'default'"
-            :text="record.regist ? '已注册' : '未注册'"
+            :status="getDeviceStatus(record).badge"
+            :text="getDeviceStatus(record).text"
           />
         </template>
         <template v-else-if="column.key === 'info'">
@@ -335,8 +335,8 @@ const deviceColumns = computed(() => [
     ellipsis: true
   },
   {
-    title: '注册状态',
-    key: 'regist',
+    title: '状态',
+    key: 'status',
     width: 90
   },
   {
@@ -418,6 +418,16 @@ const channelColumns = computed(() => [
     fixed: 'right'
   }
 ])
+
+const getDeviceStatus = record => {
+  if (!record.regist) {
+    return { badge: 'default', text: '未注册' }
+  }
+  if (record.online) {
+    return { badge: 'success', text: '在线' }
+  }
+  return { badge: 'error', text: '离线' }
+}
 
 const formatTime = timestamp => {
   if (!timestamp) return '-'

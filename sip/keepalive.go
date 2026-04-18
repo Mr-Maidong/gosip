@@ -43,6 +43,7 @@ func sipMessageKeepalive(u Devices, body []byte) error {
 		device = u
 		device.StreamIP = oldStreamIP
 		device.SipIP = oldSipIP
+		device.Online = true
 		device.ActiveAt = time.Now().Unix()
 		_activeDevices.Store(u.DeviceID, device)
 		if db.RedisClient != nil {
@@ -67,6 +68,7 @@ func sipMessageKeepalive(u Devices, body []byte) error {
 		RAddr:    u.RAddr,
 		Source:   u.Source,
 		URIStr:   u.URIStr,
+		Online:   true,
 		ActiveAt: device.ActiveAt,
 	})
 	return err
@@ -95,7 +97,7 @@ func StartDeviceOfflineWatcher(ctx context.Context) {
 				if after, ok := strings.CutPrefix(key, DeviceKeyPrefix); ok {
 					deviceID := after
 					logrus.Infof("Device offline detected: %s", deviceID)
-					err := db.DBClient.Model(&Devices{}).Where("deviceid = ?", deviceID).Update("regist", false).Error
+					err := db.DBClient.Model(&Devices{}).Where("deviceid = ?", deviceID).Update("online", false).Error
 					if err != nil {
 						logrus.Errorln("Update device offline error:", deviceID, err)
 					} else {

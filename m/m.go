@@ -41,10 +41,11 @@ func JsonResponse(c *gin.Context, code string, data any) {
 }
 
 const (
-	DeviceStatusON  = "ON"
-	DeviceStatusOFF = "OFF"
-	defaultLimit    = 20
-	defaultSort     = "-addtime"
+	DeviceStatusON     = "ON"
+	DeviceStatusOFF    = "OFF"
+	DeviceStatusONLINE = "ONLINE"
+	defaultLimit       = 20
+	defaultSort        = "-addtime"
 )
 
 func GetLimit(c *gin.Context) int {

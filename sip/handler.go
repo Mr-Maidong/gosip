@@ -109,7 +109,10 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 				// 记录活跃设备
 				user.source = fromUser.source
 				user.addr = fromUser.addr
+				user.Online = true
 				_activeDevices.Store(user.DeviceID, user)
+				// 确保 Online 状态同步到数据库
+				db.DBClient.Model(&Devices{}).Where("deviceid = ?", user.DeviceID).Update("online", true)
 				if !user.Regist {
 					// 第一次激活，保存数据库
 					user.Regist = true
