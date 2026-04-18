@@ -42,6 +42,8 @@ func SipPlay(data *Streams) (*Streams, error) {
 	default:
 		// 推流模式要求设备已注册且在线
 		user, ok := _activeDevices.Get(channel.DeviceID)
+		logrus.Infof("[Play] Get ActiveDevice: deviceID=%s, found=%v, Regist=%v, Online=%v, StreamIP=%s, SipIP=%s",
+			channel.DeviceID, ok, user.Regist, user.Online, user.StreamIP, user.SipIP)
 		if !ok {
 			// 检查是否从未注册（从数据库查询）
 			var dbDevice Devices
@@ -251,63 +253,41 @@ func SipStopPlay(ssrc string) {
 	}
 	play := data.(*Streams)
 	logrus.Infoln("SipStopPlay", play.StreamType, m.StreamTypePush)
+
+	// 先清理流记录（不等待 BYE 响应）
+	play.Status = 1
+	play.Stop = true
+	play.Msg = "已停止"
+	db.Save(db.DBClient, play)
+	StreamList.Response.Delete(ssrc)
+	if play.T == 0 {
+		StreamList.Succ.Delete(play.ChannelID)
+	}
+
 	if play.StreamType == m.StreamTypePush {
-		// 推流，需要发送关闭请求
+		// 推流，异步发送 BYE 请求（不等待响应）
 		resp := play.Resp
 		u, ok := _activeDevices.Load(play.DeviceID)
 		if !ok {
-			// 设备已离线，直接清理
 			logrus.Debugln("[SipStopPlay] device offline, skip BYE:", play.DeviceID)
-			play.Status = 1
-			play.Stop = true
-			play.Msg = "设备已离线"
-			db.Save(db.DBClient, play)
-			StreamList.Response.Delete(ssrc)
-			if play.T == 0 {
-				StreamList.Succ.Delete(play.ChannelID)
-			}
 			return
 		}
 		user := u.(Devices)
 
-		// 设备在线，尝试发送 BYE 请求
-		req := sip.NewRequestFromResponse(sip.BYE, resp)
-		req.SetDestination(user.source)
-		// 根据设备的传输方式发送请求
-		var tx *sip.Transaction
-		var err error
-		if strings.ToLower(user.TransPort) == "tcp" {
-			tx, err = srv.RequestWithProtocol(req, "tcp")
-		} else {
-			tx, err = srv.Request(req) // 默认UDP
-		}
-		if err != nil {
-			// 发送失败（如连接断开），直接清理
-			logrus.Warningln("[SipStopPlay] send BYE failed:", play.DeviceID, play.ChannelID, "err:", err)
-			play.Status = 1
-			play.Stop = true
-			play.Msg = "发送 BYE 失败: " + err.Error()
-			db.Save(db.DBClient, play)
-			StreamList.Response.Delete(ssrc)
-			if play.T == 0 {
-				StreamList.Succ.Delete(play.ChannelID)
+		go func() {
+			req := sip.NewRequestFromResponse(sip.BYE, resp)
+			req.SetDestination(user.source)
+			var err error
+			if strings.ToLower(user.TransPort) == "tcp" {
+				_, err = srv.RequestWithProtocol(req, "tcp")
+			} else {
+				_, err = srv.Request(req)
 			}
-			return
-		}
-
-		// 等待响应
-		_, err = sipResponse(tx)
-		if err != nil {
-			logrus.Warnln("[SipStopPlay] BYE response failed:", play.DeviceID, play.ChannelID, "err:", err)
-			play.Msg = err.Error()
-		} else {
-			play.Status = 1
-			play.Stop = true
-		}
-		db.Save(db.DBClient, play)
-	}
-	StreamList.Response.Delete(ssrc)
-	if play.T == 0 {
-		StreamList.Succ.Delete(play.ChannelID)
+			if err != nil {
+				logrus.Warningln("[SipStopPlay] send BYE failed:", play.DeviceID, play.ChannelID, "err:", err)
+			} else {
+				logrus.Infoln("[SipStopPlay] BYE sent:", play.DeviceID, play.ChannelID)
+			}
+		}()
 	}
 }

@@ -20,6 +20,17 @@ var (
 	srv            *sip.Server
 )
 
+// logActiveDeviceStore 记录设备缓存存入日志
+func logActiveDeviceStore(action string, device *Devices) {
+	logrus.Infof("[ActiveDevice] Store: action=%s, deviceID=%s, Regist=%v, Online=%v, StreamIP=%s, SipIP=%s",
+		action, device.DeviceID, device.Regist, device.Online, device.StreamIP, device.SipIP)
+}
+
+// logActiveDeviceDelete 记录设备缓存删除日志
+func logActiveDeviceDelete(action string, deviceID string) {
+	logrus.Infof("[ActiveDevice] Delete: action=%s, deviceID=%s", action, deviceID)
+}
+
 // Devices NVR  设备信息
 type Devices struct {
 	db.DBModel
@@ -231,6 +242,7 @@ func UpdateActiveDevice(deviceID string, device *Devices) {
 		device.addr = nil
 		device.source = nil
 		_activeDevices.Store(deviceID, *device)
+		logActiveDeviceStore("update_active", device)
 	}
 }
 

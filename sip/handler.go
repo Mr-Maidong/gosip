@@ -111,6 +111,7 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 				user.addr = fromUser.addr
 				user.Online = true
 				_activeDevices.Store(user.DeviceID, user)
+				logActiveDeviceStore("handler_register", &user)
 				// 确保 Online 状态同步到数据库
 				db.DBClient.Model(&Devices{}).Where("deviceid = ?", user.DeviceID).Update("online", true)
 				if !user.Regist {
@@ -195,6 +196,7 @@ func handlerNotify(req *sip.Request, tx *sip.Transaction) {
 	// 更新设备活跃状态
 	device.ActiveAt = time.Now().Unix()
 	_activeDevices.Store(fromUser.DeviceID, device)
+	logActiveDeviceStore("handler_notify", &device)
 
 	// 返回200 OK响应
 	tx.Respond(sip.NewResponseFromRequest("", req, http.StatusOK, "OK", nil))

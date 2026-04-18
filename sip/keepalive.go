@@ -37,15 +37,18 @@ func sipMessageKeepalive(u Devices, body []byte) error {
 		}
 	}
 	if message.Status == "OK" {
-		// 更新时保留 StreamIP 和 SipIP（这些字段不在心跳消息中）
+		// 更新时保留 StreamIP、SipIP 和 Regist（这些字段不在心跳消息中）
 		oldStreamIP := device.StreamIP
 		oldSipIP := device.SipIP
+		oldRegist := device.Regist
 		device = u
 		device.StreamIP = oldStreamIP
 		device.SipIP = oldSipIP
+		device.Regist = oldRegist
 		device.Online = true
 		device.ActiveAt = time.Now().Unix()
 		_activeDevices.Store(u.DeviceID, device)
+		logActiveDeviceStore("keepalive_ok", &device)
 		if db.RedisClient != nil {
 			if err := db.RefreshDeviceRedis(u.DeviceID); err != nil {
 				logrus.Warnln("Refresh device redis error:", u.DeviceID, err)
@@ -54,6 +57,7 @@ func sipMessageKeepalive(u Devices, body []byte) error {
 	} else {
 		device.ActiveAt = -1
 		_activeDevices.Delete(u.DeviceID)
+		logActiveDeviceDelete("keepalive_fail", u.DeviceID)
 		if db.RedisClient != nil {
 			if err := db.DeleteDeviceRedis(u.DeviceID); err != nil {
 				logrus.Warnln("Delete device redis error:", u.DeviceID, err)
@@ -102,6 +106,7 @@ func StartDeviceOfflineWatcher(ctx context.Context) {
 						logrus.Errorln("Update device offline error:", deviceID, err)
 					} else {
 						_activeDevices.Delete(deviceID)
+						logActiveDeviceDelete("offline_watcher", deviceID)
 						go notify(notifyDevicesAcitve(deviceID, "OFFLINE"))
 					}
 				}

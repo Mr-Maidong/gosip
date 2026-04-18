@@ -37,6 +37,8 @@ func SipTalk(data *Streams) (*Streams, error) {
 	switch channel.StreamType {
 	default:
 		user, ok := _activeDevices.Get(channel.DeviceID)
+		logrus.Infof("[Talk] Get ActiveDevice: deviceID=%s, found=%v, Regist=%v, Online=%v, StreamIP=%s, SipIP=%s",
+			channel.DeviceID, ok, user.Regist, user.Online, user.StreamIP, user.SipIP)
 		if !ok {
 			// 检查是否从未注册（从数据库查询）
 			var dbDevice Devices
