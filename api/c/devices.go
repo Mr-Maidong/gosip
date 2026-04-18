@@ -164,6 +164,9 @@ func DevicesUpdate(c *gin.Context) {
 		return
 	}
 
+	// 更新活跃设备缓存，确保播放时使用最新的 StreamIP 等信息
+	sipapi.UpdateActiveDevice(device.DeviceID, device)
+
 	// 如果订阅设置变化且位置订阅新启用，立即发起订阅
 	if subscribeChanged {
 		go sipapi.CheckAndSubscribe(*device)

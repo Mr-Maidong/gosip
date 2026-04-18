@@ -80,7 +80,6 @@ func (s *Server) RequestWithProtocol(req *Request, protocol string) (*Transactio
 	if !ok {
 		return nil, fmt.Errorf("missing required 'Via' header")
 	}
-	viaHop.Host = s.host.String()
 	viaHop.Port = s.port
 	if viaHop.Params == nil {
 		viaHop.Params = NewParams().Add("branch", String{Str: GenerateBranch()})
@@ -491,7 +490,6 @@ func (s *Server) Request(req *Request) (*Transaction, error) {
 	if !ok {
 		return nil, fmt.Errorf("missing required 'Via' header")
 	}
-	viaHop.Host = s.host.String()
 	viaHop.Port = s.port
 	if viaHop.Params == nil {
 		viaHop.Params = NewParams().Add("branch", String{Str: GenerateBranch()})

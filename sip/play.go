@@ -3,6 +3,7 @@ package sipapi
 import (
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 	"sync"
 	"time"
@@ -134,15 +135,23 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 	}
 	video.AddAttribute("rtpmap", "96", "PS/90000")
 
+	// 确定收流地址：优先使用设备指定的 StreamIP，否则使用媒体服务器默认 IP
+	streamIP := _sysinfo.MediaServerRtpIP
+	if device.StreamIP != "" {
+		if ip := net.ParseIP(device.StreamIP); ip != nil {
+			streamIP = ip
+		}
+	}
+
 	// defining message
 	msg := &sdp.Message{
 		Origin: sdp.Origin{
-			Username: _serverDevices.DeviceID,            // 媒体服务器id
-			Address:  _sysinfo.MediaServerRtpIP.String(), // TODO: 此处可以扩展成内外网收流地址
+			Username: _serverDevices.DeviceID, // 媒体服务器id
+			Address:  streamIP.String(),
 		},
 		Name: name,
 		Connection: sdp.ConnectionData{
-			IP:  _sysinfo.MediaServerRtpIP, // TODO: 此处可以扩展成内外网收流地址
+			IP:  streamIP,
 			TTL: 0,
 		},
 		Timing: []sdp.Timing{

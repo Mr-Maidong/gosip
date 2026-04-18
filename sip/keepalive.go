@@ -37,8 +37,14 @@ func sipMessageKeepalive(u Devices, body []byte) error {
 		}
 	}
 	if message.Status == "OK" {
+		// 更新时保留 StreamIP 和 SipIP（这些字段不在心跳消息中）
+		oldStreamIP := device.StreamIP
+		oldSipIP := device.SipIP
+		device = u
+		device.StreamIP = oldStreamIP
+		device.SipIP = oldSipIP
 		device.ActiveAt = time.Now().Unix()
-		_activeDevices.Store(u.DeviceID, u)
+		_activeDevices.Store(u.DeviceID, device)
 		if db.RedisClient != nil {
 			if err := db.RefreshDeviceRedis(u.DeviceID); err != nil {
 				logrus.Warnln("Refresh device redis error:", u.DeviceID, err)

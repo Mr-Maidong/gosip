@@ -39,7 +39,7 @@ func NewHeaderBuilder() *HeadersBuilder {
 	return &HeadersBuilder{
 		protocol:        "SIP",
 		protocolVersion: "2.0",
-		host:            "localhost",
+		host:            "0.0.0.0",
 		transport:       "UDP",
 		cseq:            &CSeq{SeqNo: 1},
 		callID:          &callID,

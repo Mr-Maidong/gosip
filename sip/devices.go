@@ -223,6 +223,15 @@ func GetActiveDevice(deviceID string) (Devices, bool) {
 	return _activeDevices.Get(deviceID)
 }
 
+// UpdateActiveDevice 更新活跃设备的设备信息（用于同步数据库变更到缓存）
+func UpdateActiveDevice(deviceID string, device *Devices) {
+	if _, ok := _activeDevices.Get(deviceID); ok {
+		device.addr = nil
+		device.source = nil
+		_activeDevices.Store(deviceID, *device)
+	}
+}
+
 // SipCatalog 获取注册设备包含的列表 (私有函数，内部实现)
 func SipCatalog(to Devices) {
 	hb := sip.NewHeaderBuilder().SetTo(to.addr).SetFrom(_serverDevices.addr).AddVia(&sip.ViaHop{

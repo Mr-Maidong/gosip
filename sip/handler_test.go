@@ -51,8 +51,8 @@ func TestParseMobilePosition_MinimalFields(t *testing.T) {
 	assert.Equal(t, "33010000001118", pos.DeviceID)
 	assert.Equal(t, 121.473701, pos.Longitude)
 	assert.Equal(t, 31.230416, pos.Latitude)
-	assert.Equal(t, 0.0, pos.Speed)    // 未提供应为0
-	assert.Equal(t, "", pos.Time)      // 未提供应为空
+	assert.Equal(t, 0.0, pos.Speed) // 未提供应为0
+	assert.Equal(t, "", pos.Time)   // 未提供应为空
 }
 
 func TestParseMobilePosition_InvalidXML(t *testing.T) {
@@ -111,8 +111,8 @@ func TestParseMobilePosition_GBKEncoding(t *testing.T) {
 
 func TestCheckAndSubscribe_NoSubscribe(t *testing.T) {
 	device := Devices{
-		DeviceID: "33010000001118",
-		Regist:   true,
+		DeviceID:  "33010000001118",
+		Regist:    true,
 		Subscribe: nil,
 	}
 
