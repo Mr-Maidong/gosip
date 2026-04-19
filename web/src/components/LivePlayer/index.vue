@@ -53,7 +53,7 @@ const loadAndInitPlayer = () => {
     isMute: props.muted,
     stretch: props.stretch,
     hasAudio: true,
-    bufferTime: 0.5,
+    bufferTime: 0.2,
     loadTimeOut: 10,
     debug: false,
     btns: {
