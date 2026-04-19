@@ -107,9 +107,9 @@ func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, err
 	)
 	name := "Talk"
 	// 根据设备传输协议设置 SDP 协议
-	protocal := "RTP/AVP"
+	protocol := "RTP/AVP"
 	if strings.ToLower(device.TransPort) == "tcp" {
-		protocal = "TCP/RTP/AVP"
+		protocol = "TCP/RTP/AVP"
 	}
 
 	// 音频媒体描述
@@ -119,7 +119,7 @@ func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, err
 			Port:    _sysinfo.MediaServerRtpPort,
 			Formats: []string{"8"},
 			// Formats:  []string{"8 104"},
-			Protocol: protocal,
+			Protocol: protocol,
 		},
 	}
 	audio.AddAttribute("sendonly")

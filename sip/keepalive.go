@@ -87,7 +87,7 @@ func sipMessageKeepalive(u Devices, body []byte) error {
 			}
 		}
 	}
-	go notify(notifyDevicesAcitve(u.DeviceID, message.Status))
+	go notify(notifyDevicesActive(u.DeviceID, message.Status))
 	_, err := db.UpdateAll(db.DBClient, new(Devices), map[string]any{"deviceid=?": u.DeviceID}, Devices{
 		Host:     u.Host,
 		Port:     u.Port,
@@ -130,7 +130,7 @@ func StartDeviceOfflineWatcher(ctx context.Context) {
 					} else {
 						_activeDevices.Delete(deviceID)
 						logActiveDeviceDelete("offline_watcher", deviceID)
-						go notify(notifyDevicesAcitve(deviceID, "OFFLINE"))
+						go notify(notifyDevicesActive(deviceID, "OFFLINE"))
 					}
 				}
 			}

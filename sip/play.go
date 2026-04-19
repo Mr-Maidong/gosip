@@ -121,10 +121,10 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 		b []byte
 	)
 	name := "Play"
-	protocal := "TCP/RTP/AVP"
+	protocol := "TCP/RTP/AVP"
 	if data.T == 1 {
 		name = "Playback"
-		protocal = "RTP/RTCP"
+		protocol = "RTP/RTCP"
 	}
 
 	// 视频媒体描述
@@ -133,7 +133,7 @@ func sipPlayPush(data *Streams, channel Channels, device Devices) (*Streams, err
 			Type:     "video",
 			Port:     _sysinfo.MediaServerRtpPort,
 			Formats:  []string{"96"},
-			Protocol: protocal,
+			Protocol: protocol,
 		},
 	}
 	video.AddAttribute("recvonly")

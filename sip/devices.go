@@ -164,7 +164,7 @@ func SyncDevicesCodec(ssrc, deviceid string) {
 }
 
 // 从请求中解析出设备信息
-func parserDevicesFromReqeust(req *sip.Request) (Devices, bool) {
+func parserDevicesFromRequest(req *sip.Request) (Devices, bool) {
 	u := Devices{}
 	header, ok := req.From()
 	if !ok {

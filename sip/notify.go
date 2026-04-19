@@ -57,7 +57,7 @@ func notifyDeviceUnknown(deviceID, addr string) *Notify {
 	}
 }
 
-func notifyDevicesAcitve(id, status string) *Notify {
+func notifyDevicesActive(id, status string) *Notify {
 	return &Notify{
 		Method: NotifyMethodDevicesActive,
 		Data: map[string]any{

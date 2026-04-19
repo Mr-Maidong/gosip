@@ -18,7 +18,7 @@ type MessageReceive struct {
 }
 
 func handlerMessage(req *sip.Request, tx *sip.Transaction) {
-	u, ok := parserDevicesFromReqeust(req)
+	u, ok := parserDevicesFromRequest(req)
 	if !ok {
 		// 未解析出来源用户返回错误
 		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil))
@@ -80,7 +80,7 @@ func handlerMessage(req *sip.Request, tx *sip.Transaction) {
 func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 	// 判断是否存在授权字段
 	if hdrs := req.GetHeaders("Authorization"); len(hdrs) > 0 {
-		fromUser, ok := parserDevicesFromReqeust(req)
+		fromUser, ok := parserDevicesFromRequest(req)
 		if !ok {
 			return
 		}
@@ -141,7 +141,7 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 		}
 	} else {
 		// 首次注册请求（无Authorization头），解析设备信息并记录
-		if fromUser, ok := parserDevicesFromReqeust(req); ok {
+		if fromUser, ok := parserDevicesFromRequest(req); ok {
 			user := Devices{DeviceID: fromUser.DeviceID}
 			if err := db.Get(db.DBClient, &user); err != nil {
 				// 设备不存在，自动插入数据库（使用配置的默认密码）
@@ -170,7 +170,7 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 // handlerNotify 处理NOTIFY请求
 func handlerNotify(req *sip.Request, tx *sip.Transaction) {
 	// 解析设备信息
-	fromUser, ok := parserDevicesFromReqeust(req)
+	fromUser, ok := parserDevicesFromRequest(req)
 	if !ok {
 		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil))
 		return
@@ -264,7 +264,7 @@ func parseMobilePosition(deviceID string, body []byte) {
 // handlerBye 处理BYE请求
 func handlerBye(req *sip.Request, tx *sip.Transaction) {
 	// 解析设备信息
-	fromUser, ok := parserDevicesFromReqeust(req)
+	fromUser, ok := parserDevicesFromRequest(req)
 	if !ok {
 		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil))
 		return
@@ -310,7 +310,7 @@ func handlerBye(req *sip.Request, tx *sip.Transaction) {
 // handlerOptions 处理OPTIONS请求
 func handlerOptions(req *sip.Request, tx *sip.Transaction) {
 	// 解析设备信息
-	fromUser, ok := parserDevicesFromReqeust(req)
+	fromUser, ok := parserDevicesFromRequest(req)
 	if !ok {
 		tx.Respond(sip.NewResponseFromRequest("", req, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil))
 		return
