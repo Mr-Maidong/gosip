@@ -1,38 +1,43 @@
 # AGENTS.md
 
-This file provides guidance for AI agents working in this repository.
-
-## Project Overview
-
-GoSIP (now YSIP) is a GB28181 SIP server for video surveillance systems. It works with ZLMediaKit as the media server.
-- **Go Server**: GB28181 SIP protocol with Gin HTTP API
-- **Web Frontend**: Vue 3 + Vite + Ant Design Vue + Pinia
-
-
-## Development
-- 当用户要开发前端页面时使用 vue skill
-- 当用户要开发后台时使用 golang skill
+本文件为 AI 代理在此项目中的开发指南。
 
 ---
 
-## Build Commands
+## 项目概述
 
-### Go Server
+GoSIP（现名 YSIP）是一个 GB28181 SIP 服务器，用于视频监控系统，与 ZLMediaKit 媒体服务器配合使用。
+- **Go 后端**：GB28181 SIP 协议 + Gin HTTP API
+- **Web 前端**：Vue 3 + Vite + Ant Design Vue + Pinia
+
+---
+
+## 开发规范
+
+- 开发前端页面时使用 vue skill
+- 开发后端时使用 golang skill
+
+---
+
+## 构建命令
+
+### Go 后端
+
 ```bash
-# Build (Linux)
+# 构建（Linux）
 GOOS=linux go build -v -o ysip
 
-# Build for current platform
+# 当前平台构建
 go build -v -o ysip
 
-# Run
+# 运行
 go run main.go
 
-# Format & vet (REQUIRED before committing)
+# 格式化和检查（提交前必须执行）
 go fmt ./...
 go vet ./...
 
-# Test (no test files currently exist)
+# 测试（目前无测试文件）
 go test ./...
 go test -v -run "TestPattern" ./...
 go test -v ./api/...
@@ -42,7 +47,8 @@ make docker
 make all
 ```
 
-### Web Frontend (in web/ directory)
+### Web 前端（位于 web/ 目录）
+
 ```bash
 yarn install
 yarn dev        # http://localhost:3000
@@ -51,19 +57,21 @@ yarn lint
 yarn format
 ```
 
----
+### Go Swagger 文档
 
-## Go Swagger
-```
+```bash
 go install github.com/swaggo/swag/cmd/swag@latest
 swag init -g main.go -o docs
 ```
 
-## Code Style Guidelines
+---
 
-### Go
-- **Formatting**: Use `gofmt` (tabs, not spaces)
-- **Imports**: Group: stdlib → third-party → internal
+## 代码风格
+
+### Go 规范
+
+- **格式化**：使用 `gofmt`（制表符缩进）
+- **导入分组**：标准库 → 第三方 → 内部包
   ```go
   import (
       "strconv"
@@ -74,11 +82,12 @@ swag init -g main.go -o docs
       "github.com/panjjo/gosip/utils"
   )
   ```
-- **Naming**: PascalCase for exported, camelCase for unexported. Acronyms uppercase (ID, HTTP, API)
-- **Comments**: Chinese comments for exported functions
-- **Error Handling**: Return early on error. Use `m.StatusXXX` constants
+- **命名**：导出函数/类型用 PascalCase，内部用 camelCase，缩写大写（ID、HTTP、API）
+- **注释**：导出函数使用中文注释
+- **错误处理**：提前返回，使用 `m.StatusXXX` 常量
 
-### API Handler Pattern
+### API Handler 模式
+
 ```go
 func HandlerName(c *gin.Context) {
     param := c.Param("id")
@@ -104,7 +113,8 @@ func HandlerName(c *gin.Context) {
 }
 ```
 
-### Transaction Pattern
+### 事务模式
+
 ```go
 tx, err := db.NewTx(db.DBClient)
 if err != nil {
@@ -120,216 +130,198 @@ tx.Commit()
 m.JsonResponse(c, m.StatusSucc, user)
 ```
 
-### Vue 3 (Composition API)
-- `<script setup lang="ts">` for TypeScript
-- SFC order: `<script>` → `<template>` → `<style>`
-- Components: PascalCase (e.g., `UserProfile.vue`)
-- Use `@` alias for `src/`: `import { useUserStore } from '@/store/user'`
-- State: Pinia for global, `ref`/`reactive` for local
+### Vue 3（组合式 API）
+
+- 使用 `<script setup lang="ts">`
+- SFC 顺序：`<script>` → `<template>` → `<style>`
+- 组件命名：PascalCase（如 `UserProfile.vue`）
+- 路径别名：使用 `@` 指向 `src/`
+- 状态管理：Pinia 全局状态，`ref`/`reactive` 局部状态
 
 ---
 
-## Architecture
+## 项目架构
+
 ```
 main.go → api.Init() + sipapi.Start()
               ↓                    ↓
-         api/ (Gin)          sip/ (SIP Protocol)
-         ├── c/ (handlers)   ├── s/ (low-level SIP)
-         ├── middleware/      ├── devices.go, play.go, zlm.go
-         ├── model/          └── ...
+         api/ (Gin)          sip/ (SIP 协议)
+         ├── c/ (处理器)     ├── s/ (底层 SIP 栈)
+         ├── middleware/     ├── devices.go, play.go, zlm.go
+         ├── model/         └── ...
          └── service/
-         db/ (GORM)          m/ (config)
+         db/ (GORM)          m/ (配置)
          ├── gorm.go         ├── config.go, m.go
          └── tx.go           utils/
                                 └── ...
 ```
 
-### Frontend Structure
+### 前端结构
+
 ```
 web/src/
 ├── components/    # 共享组件
-├── views/        # 页面组件 (home, platform, devices, streams, settings)
-│   └── home/     # 首页模块
-│       ├── index.vue       # 首页入口
-│       └── WelcomeCard.vue # 欢迎卡片组件
-├── api/          # API 请求模块
-├── store/        # Pinia 状态管理
-├── router/       # Vue Router 配置
-└── styles/       # LESS 样式 (variables.less, mixins.less)
+├── views/         # 页面组件 (home, platform, devices, streams, settings)
+│   └── home/      # 首页模块
+├── api/           # API 请求
+├── store/         # Pinia 状态管理
+├── router/        # Vue Router 配置
+└── styles/        # LESS 样式
 ```
-
-### Key Directories
-| Path | Description |
-|------|-------------|
-| `api/c/` | HTTP handlers |
-| `api/middleware/` | Auth, CORS, permission |
-| `api/model/` | GORM models |
-| `api/service/` | Business logic |
-| `sip/` | SIP protocol |
-| `sip/s/` | Low-level SIP stack |
-| `db/` | GORM + transactions |
-| `m/` | Config, constants |
-| `web/src/` | Vue 3 frontend |
-| `web/src/components/` | 共享组件 |
-| `web/src/views/` | 页面组件 |
-| `web/src/views/home/` | 首页模块 (index.vue + WelcomeCard.vue) |
 
 ---
 
-## API Routes
+## SIP 模块指南
 
-All routes use `/api/v1/` prefix:
+### 核心数据结构
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/health` | Health check (no auth) |
-| POST | `/api/v1/login` | Login |
-| GET/POST | `/api/v1/users` | User management |
-| GET/POST | `/api/v1/devices` | Device/监控管理 |
-| GET/POST | `/api/v1/platform` | Platform/平台管理 (级联平台) |
-| GET/POST | `/api/v1/channels` | Channel statistics only (前端无独立页面) |
-| POST | `/api/v1/channels/:id/streams` | Start/stop streaming |
-| GET | `/api/v1/channels/:id/records` | Recording playback |
+| 数据结构 | 文件 | 说明 |
+|---------|------|------|
+| `ActiveDevices` | `sip/devices.go` | 设备缓存，`sync.Map` 存储在线设备 |
+| `StreamList` | `sip/stream.go` | 流列表，管理直播/录像/对讲流 |
+| `_recordList` | `sip/record.go` | 录像列表 |
+
+### 设备状态
+
+- `Regist = false`：从未注册
+- `Regist = true && Online = true`：在线
+- `Regist = true && Online = false`：已注册但离线
+
+### 流 ID 命名规范
+
+- 直播：`live_{device}_{channel}`
+- 录像回放：`replay_{device}_{channel}_{time}`
+- 对讲：`talk_{device}_{channel}`
+
+### 设备信令/收流地址
+
+- `SipIP`：SIP 信令通讯 IP（优先使用）
+- `StreamIP`：设备接收媒体流 IP（优先使用）
+
+---
+
+## API 路由
+
+所有路由使用 `/api/v1/` 前缀：
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/v1/health` | 健康检查（无需认证） |
+| POST | `/api/v1/login` | 登录 |
+| GET/POST | `/api/v1/users` | 用户管理 |
+| GET/POST | `/api/v1/devices` | 设备管理 |
+| GET/POST | `/api/v1/platform` | 平台管理（级联平台） |
+| GET/POST | `/api/v1/channels` | 通道统计（前端无独立页面） |
+| POST | `/api/v1/channels/:id/streams` | 开始/停止推流 |
+| GET | `/api/v1/channels/:id/records` | 录像回放 |
 | GET/POST | `/api/v1/roles`, `/api/v1/permissions` | RBAC |
 
-## Frontend Pages
+### 前端页面
 
-| Route | Component | Description |
-|-------|-----------|-------------|
-| `/home` | home/index.vue | 首页欢迎卡片 + WelcomeCard 组件 |
+| 路由 | 组件 | 说明 |
+|------|------|------|
+| `/home` | home/index.vue | 首页欢迎卡片 |
 | `/platform` | platform/index.vue | 级联平台管理 |
 | `/devices` | devices/index.vue | 监控设备管理 |
 | `/streams` | streams/index.vue | 流管理 |
 | `/settings` | settings/index.vue | 系统设置 |
 
-**Note**: 通道(Channel)前端无独立管理页面，仅在首页统计中展示通道总数。
-
 ---
 
-## Response Format
+## 响应格式
 
-`m.JsonResponse(c, code, data)` produces:
+`m.JsonResponse(c, code, data)` 输出：
 ```json
 {"msgid": "...", "code": "0", "data": {...}}
 ```
 
-Status codes:
-- `m.StatusSucc` = "0" (success)
-- `m.StatusAuthERR` = "1000" (auth error)
-- `m.StatusDBERR` = "1001" (database error)
-- `m.StatusParamsERR` = "1002" (params error)
-- `m.StatusSysERR` = "1003" (system error)
+状态码：
+- `m.StatusSucc` = "0"（成功）
+- `m.StatusAuthERR` = "1000"（认证错误）
+- `m.StatusDBERR` = "1001"（数据库错误）
+- `m.StatusParamsERR` = "1002"（参数错误）
+- `m.StatusSysERR` = "1003"（系统错误）
 
 ---
 
-## Database Patterns
+## 数据库模式
 
 ```go
-// Find with pagination and JSON filters
+// 分页 + JSON 条件查询
 db.FindWithJson(db.DBClient, new(model.User), &users, filters, sort, skip, limit, true)
 
-// Get by example
+// 按示例查询
 db.Get(db.DBClient, &model.User{Username: username})
 
-// Create, Save, Delete
+// 创建、保存、删除
 db.Create(db.DBClient, &user)
 db.Save(db.DBClient, user)
 db.Del(db.DBClient, user)
 
-// Record not found check
+// 记录不存在检查
 if db.RecordNotFound(err) { ... }
 ```
 
 ---
 
-## Notes
-- **No test files exist** - test commands documented but will not produce results
-- Default admin: `admin` / `admin123`
-- Cron jobs every 5 min: `sipapi.CheckStreams`, `sipapi.ClearFiles`
-- Config: `config.yml`
-- **Logging**: Separate log files for SIP (`logs/gb28181.log`), SQL (`logs/sql.log`), and console output
+## 日志系统
 
----
+### 日志文件
 
-## Logging System
+| 文件 | 内容 | 级别控制 |
+|------|------|---------|
+| `logs/gb28181.log` | SIP 协议交互 | 跟随 `logger` 配置 |
+| `logs/sql.log` | SQL 查询 | `debug` 或 `trace` 时启用 |
+| Console | 应用运行时日志 | 跟随 `logger` 配置 |
 
-### Log Files
+### 架构
 
-| File | Content | Level Control |
-|------|---------|---------------|
-| `logs/gb28181.log` | SIP protocol interactions | Follows `logger` config |
-| `logs/sql.log` | SQL queries | Enabled on `debug` or `trace` |
-| Console | Application runtime logs | Follows `logger` config |
+**SIP 日志**：
+- 使用 `utils.SIPLoggerHook`（函数指针注入）避免循环导入
+- 在 `main.go` 设置：`utils.SIPLoggerHook = m.LogSIPMessage`
+- `Gb28181Logger` 使用 `CustomFormatter` 格式化 SIP 消息
 
-### Architecture
+**SQL 日志**：
+- 使用自定义 `sqlLogWriter`（io.Writer）拦截 GORM 日志
+- 在 `m/config.go` 配置：`db.DBClient.SetLogger(log.New(GetSqlLogWriter(), "", 0))`
 
-**SIP Logging**:
-- Uses `utils.SIPLoggerHook` (function pointer injection) to avoid circular imports
-- Hook is set in `main.go`: `utils.SIPLoggerHook = m.LogSIPMessage`
-- `Gb28181Logger` uses `CustomFormatter` for SIP message formatting with box-drawing characters
+### 日志级别
 
-**SQL Logging**:
-- Uses custom `sqlLogWriter` (io.Writer) to intercept GORM logs
-- Formats SQL logs with Location, Duration, and SQL statement
-- Configured in `m/config.go`: `db.DBClient.SetLogger(log.New(GetSqlLogWriter(), "", 0))`
-
-### Log Level Control
-
-Configure `logger` in `config.yml`:
+在 `config.yml` 中配置 `logger`：
 ```yaml
 logger: debug  # trace, debug, info, warn, error
 ```
 
-| Level | SIP Logs | SQL Logs | App Logs |
-|-------|----------|----------|----------|
-| `trace` | ✅ Detailed SIP messages | ✅ All SQL queries | ✅ All |
-| `debug` | ✅ SIP messages | ✅ All SQL queries | ✅ Debug+ |
-| `info` | ❌ Only important info | ❌ Disabled | ✅ Info+ |
-| `warn` | ❌ Only warnings | ❌ Disabled | ✅ Warn+ |
-| `error` | ❌ Only errors | ❌ Disabled | ✅ Error+ |
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `m/logger.go` | Log initializers, formatters, level control |
-| `m/config.go` | Config loading, log level setup, GORM log config |
-| `utils/logger.go` | SIP log hook definition (avoids circular imports) |
-| `main.go` | Hook injection (`utils.SIPLoggerHook = m.LogSIPMessage`) |
-
-### Usage
-
-**Log SIP Messages**:
-```go
-utils.LogSIPRequest(source, method, txKey, message)
-utils.LogSIPResponse(source, txKey, message)
-utils.LogSIPSend(msgType, destination, txKey, message)
-```
-
-**Log SQL Queries**: Automatically handled by GORM when `logger` is `debug` or `trace`.
+| 级别 | SIP 日志 | SQL 日志 | 应用日志 |
+|------|---------|---------|---------|
+| `trace` | ✅ 详细 SIP 消息 | ✅ 所有 SQL | ✅ 全部 |
+| `debug` | ✅ SIP 消息 | ✅ 所有 SQL | ✅ Debug+ |
+| `info` | ❌ 仅重要信息 | ❌ 禁用 | ✅ Info+ |
+| `warn` | ❌ 仅警告 | ❌ 禁用 | ✅ Warn+ |
+| `error` | ❌ 仅错误 | ❌ 禁用 | ✅ Error+ |
 
 ---
 
-## Redis Device Offline Detection
+## Redis 设备离线检测
 
 设备离线检测依赖 Redis 实现心跳保活机制。
 
-### Redis Configuration
+### 配置
 
-**config.yml:**
+**config.yml：**
 ```yaml
 redis:
-  addr: localhost:6379      # Redis 地址
-  password: ""              # Redis 密码（无密码留空）
-  db: 0                    # Redis 数据库编号
+  addr: localhost:6379
+  password: ""
+  db: 0
 ```
 
-**Redis Server requires:**
+**Redis Server 需要：**
 ```
 notify-keyspace-events Ex
 ```
 
-### How It Works
+### 工作流程
 
 ```
 设备注册/心跳(OK) → RefreshDeviceRedis() → Redis key: device:{id}, TTL=60秒
@@ -341,23 +333,52 @@ notify-keyspace-events Ex
                                更新数据库 Regist=false + 发送离线通知
 ```
 
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `db/redis.go` | Redis 连接初始化和设备 key 操作函数 |
-| `sip/handler.go` | 设备注册时写入 Redis key |
-| `sip/keepalive.go` | 心跳刷新 Redis TTL + `StartDeviceOfflineWatcher` 监听过期事件 |
-
-### Redis Key Functions
+### 核心函数
 
 ```go
-// 刷新设备 Redis key（TTL 60秒）
-db.RefreshDeviceRedis(deviceID)
-
-// 删除设备 Redis key
-db.DeleteDeviceRedis(deviceID)
-
-// 检查设备是否在线
-exists, _ := db.GetDeviceRedis(deviceID)
+db.RefreshDeviceRedis(deviceID)  // 刷新设备 Redis key（TTL 60秒）
+db.DeleteDeviceRedis(deviceID)    // 删除设备 Redis key
+db.GetDeviceRedis(deviceID)       // 检查设备是否在线
 ```
+
+---
+
+## 代码修改规范
+
+### 修改原则
+
+1. **最小化修改** - 只改需要改的部分，不要顺手改动其他代码
+2. **改前确认意图** - 修改前仔细理解原有代码的意图，不能想当然
+3. **改后核对 diff** - 修改后立即检查 diff，确保只有预期的变更
+4. **不确定时先确认** - 如果发现原有逻辑看起来不合理，先和用户确认再修改
+
+### 常见场景注意事项
+
+| 场景 | 注意事项 |
+|------|---------|
+| 修复拼写错误 | 只改拼写单词本身，不改业务逻辑 |
+| 重构变量名 | 确保只改名称，不改赋值和使用方式 |
+| 优化条件判断 | 确认原逻辑后再优化，不要假设原逻辑有错 |
+| 修改判断条件 | 先理解原条件的作用，确认后再改 |
+
+---
+
+## 待办和代码审查
+
+详细待办事项请参考：
+- `TODO.md` - 功能待办和已完成的特性
+- `REVIEW.md` - 代码审查报告，包含 P0 优先修复项
+
+### P0 优先修复项
+
+1. **并发安全**：`_serverDevices.addr.Params` 被多 goroutine 并发修改
+2. **测试覆盖率**：核心逻辑（注册、播放、心跳）缺少单元测试
+3. **nonce 安全**：SIP 认证 nonce 无过期时间，存在重放攻击风险
+
+---
+
+## 备注
+
+- 默认管理员账号：`admin` / `admin123`
+- 定时任务（每5分钟）：`sipapi.CheckStreams`、`sipapi.ClearFiles`
+- 配置文件：`config.yml`
