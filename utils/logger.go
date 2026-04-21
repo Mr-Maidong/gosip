@@ -7,6 +7,10 @@ import (
 // SIPLoggerHook SIP日志钩子函数，由外部注入
 var SIPLoggerHook func(level logrus.Level, prefix string, message string)
 
+// TCPConnCloseHook TCP连接断开钩子函数，由外部注入
+// 参数为断开连接的远程地址
+var TCPConnCloseHook func(remoteAddr string)
+
 // LogSIPMessage 格式化打印SIP消息
 func LogSIPMessage(level logrus.Level, prefix string, message string) {
 	if SIPLoggerHook != nil {

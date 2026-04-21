@@ -33,6 +33,37 @@ func Start() {
 	srv.RegistHandler(sip.BYE, handlerBye)
 	go srv.ListenTCPServer(config.TCP)
 	go srv.ListenUDPServer(config.UDP)
+
+	// 注册TCP连接断开回调
+	utils.TCPConnCloseHook = handleTCPConnClose
+}
+
+// handleTCPConnClose TCP连接断开时处理
+// 根据断开连接的远程地址查找设备并标记为离线
+func handleTCPConnClose(remoteAddr string) {
+	_activeDevices.Range(func(key, value interface{}) bool {
+		device := value.(Devices)
+		if device.Source == remoteAddr {
+			logrus.Infof("TCP连接断开，标记设备离线: DeviceID=%s, Addr=%s", device.DeviceID, remoteAddr)
+			// 先更新数据库
+			if err := db.DBClient.Model(&Devices{}).Where("deviceid = ?", device.DeviceID).Update("online", false).Error; err != nil {
+				logrus.Errorln("TCP断开更新设备状态失败:", device.DeviceID, err)
+			}
+			// 删除Redis
+			if db.RedisClient != nil {
+				if err := db.DeleteDeviceRedis(device.DeviceID); err != nil {
+					logrus.Errorln("TCP断开删除Redis失败:", device.DeviceID, err)
+				}
+			}
+			// 发送离线通知
+			go notify(notifyDevicesActive(device.DeviceID, "OFFLINE"))
+			// 最后从缓存中删除
+			_activeDevices.Delete(device.DeviceID)
+			logActiveDeviceDelete("tcp_close", device.DeviceID)
+			return false // 匹配到设备后停止遍历
+		}
+		return true
+	})
 }
 
 // ActiveDevices 记录当前活跃设备，请求播放时设备必须处于活跃状态

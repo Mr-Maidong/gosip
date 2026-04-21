@@ -163,7 +163,11 @@ func (s *Server) handleTCPConnection(conn *net.TCPConn) {
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
-			logrus.Errorln("tcp.Read err", err)
+			// 调用TCP连接断开钩子
+			if utils.TCPConnCloseHook != nil {
+				utils.TCPConnCloseHook(remoteAddr)
+			}
+			logrus.Warnln("tcp connection closed:", remoteAddr)
 			break
 		}
 		// 将读取的数据追加到缓冲区
