@@ -214,25 +214,19 @@
               type="link"
               size="small"
               :loading="record.starting"
-              :disabled="record.hasStream"
               @click="handleStartLive(record)"
             >
               直播
             </a-button>
-            <a-popconfirm
-              title="确定停止直播吗？"
-              @confirm="handleStopLive(record)"
+            <a-button
+              type="link"
+              size="small"
+              danger
+              :loading="record.stopping"
+              @click="handleStopLive(record)"
             >
-              <a-button
-                type="link"
-                size="small"
-                danger
-                :loading="record.stopping"
-                :disabled="!record.hasStream"
-              >
-                停止
-              </a-button>
-            </a-popconfirm>
+              停止
+            </a-button>
             <a-button
               type="link"
               size="small"
@@ -595,6 +589,10 @@ const handleSync = async record => {
 }
 
 const handleStartLive = async record => {
+  if (record.status !== 'ON') {
+    message.warning('设备离线，无法开启直播')
+    return
+  }
   record.starting = true
   liveUrl.value = ''
   currentChannel.value = record
@@ -618,6 +616,10 @@ const handleStartLive = async record => {
 }
 
 const handleStopLive = async record => {
+  if (record.status !== 'ON') {
+    message.warning('设备离线')
+    return
+  }
   record.stopping = true
   try {
     // 使用 streamid 而不是 channelid
@@ -630,7 +632,7 @@ const handleStopLive = async record => {
     liveUrl.value = ''
     fetchChannels()
   } catch (error) {
-    message.error('停止直播失败')
+    // 响应拦截器已显示错误消息，这里不需要重复显示
   } finally {
     record.stopping = false
   }
