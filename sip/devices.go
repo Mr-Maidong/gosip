@@ -75,6 +75,12 @@ type Devices struct {
 	SipIP string `json:"sipip" gorm:"column:sipip"`
 	// StreamIP 设备接收媒体流 IP（优先使用）
 	StreamIP string `json:"streamip" gorm:"column:streamip"`
+	// Longitude 经度
+	Longitude float64 `json:"longitude" gorm:"column:longitude;type:decimal(10,6)"`
+	// Latitude 纬度
+	Latitude float64 `json:"latitude" gorm:"column:latitude;type:decimal(10,6)"`
+	// GpsTime GPS时间
+	GpsTime time.Time `json:"gps_time" gorm:"column:gps_time;type:datetime"`
 	// Subscribe 订阅设置 (JSON格式)
 	// 格式：{"position":true, "alarm":false}
 	Subscribe db.M `json:"subscribe" gorm:"column:subscribe;type:json"`
@@ -125,6 +131,12 @@ type Channels struct {
 	StreamType string `json:"streamtype" gorm:"column:streamtype;default:'push'"`
 	// streamtype=pull时，拉流地址
 	URL string `json:"url"  gorm:"column:url"`
+	// Longitude 经度
+	Longitude float64 `json:"longitude" gorm:"column:longitude;type:decimal(10,6)"`
+	// Latitude 纬度
+	Latitude float64 `json:"latitude" gorm:"column:latitude;type:decimal(10,6)"`
+	// GpsTime GPS时间
+	GpsTime time.Time `json:"gps_time" gorm:"column:gps_time;type:datetime"`
 
 	addr *sip.Address `gorm:"-"`
 }
