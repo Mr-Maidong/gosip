@@ -1,8 +1,8 @@
 .vscode/*
-srv.exe
+srv*
 srv
 .idea
-gosip
+ysip*
 node_modules
 *.log
 .opencode/
