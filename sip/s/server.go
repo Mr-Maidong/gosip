@@ -90,7 +90,9 @@ func (s *Server) RequestWithProtocol(req *Request, protocol string) (*Transactio
 
 	var tx *Transaction
 	if strings.ToLower(protocol) == "tcp" {
-		// 使用TCP连接
+		if req.Destination() == nil {
+			return nil, fmt.Errorf("request destination is nil")
+		}
 		destAddr := req.Destination().String()
 		if tcpConn, ok := s.getTCPConnection(destAddr); ok {
 			tx = s.txs.newTX(getTXKey(req), tcpConn)

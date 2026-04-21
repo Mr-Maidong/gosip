@@ -104,8 +104,8 @@ func sipMessageRecordInfo(u Devices, body []byte) error {
 		info.num += len(message.Item)
 		var sint, eint int64
 		for _, item := range message.Item {
-			s, _ := time.ParseInLocation("2006-01-02T15:04:05", item.StartTime, time.Local)
-			e, _ := time.ParseInLocation("2006-01-02T15:04:05", item.EndTime, time.Local)
+			s, _ := time.ParseInLocation(gbTimeLayout, item.StartTime, time.Local)
+			e, _ := time.ParseInLocation(gbTimeLayout, item.EndTime, time.Local)
 			sint = s.Unix()
 			eint = e.Unix()
 			if sint < info.s {

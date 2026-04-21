@@ -11,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const gbTimeLayout = "2006-01-02T15:04:05"
+
 // MessageReceive 接收到的请求数据最外层，主要用来判断数据类型
 type MessageReceive struct {
 	CmdType string `xml:"CmdType"`
@@ -226,6 +228,11 @@ func parseMobilePosition(deviceID string, body []byte) {
 		locationID = pos.DeviceID
 	}
 
+	gpsTime, err := time.ParseInLocation(gbTimeLayout, pos.Time, time.Local)
+	if err != nil {
+		logrus.Warnln("解析GPS时间失败:", pos.Time, err)
+	}
+
 	// 1. 尝试在通道表中查找
 	channel := Channels{ChannelID: locationID}
 	if err := db.Get(db.DBClient, &channel); err == nil {
@@ -233,12 +240,13 @@ func parseMobilePosition(deviceID string, body []byte) {
 			"经度:", pos.Longitude,
 			"纬度:", pos.Latitude,
 			"时间:", pos.Time)
-		// TODO: 更新 channels 表的位置信息
-		// db.DBClient.Model(&Channels{}).Where("channelid = ?", locationID).Updates(map[string]interface{}{
-		//     "longitude": pos.Longitude,
-		//     "latitude":  pos.Latitude,
-		//     "gps_time":  pos.Time,
-		// })
+		if err := db.DBClient.Model(&Channels{}).Where("channelid = ?", locationID).Updates(map[string]interface{}{
+			"longitude": pos.Longitude,
+			"latitude":  pos.Latitude,
+			"gps_time":   gpsTime,
+		}).Error; err != nil {
+			logrus.Errorln("更新通道位置信息失败:", locationID, err)
+		}
 		return
 	}
 
@@ -249,12 +257,13 @@ func parseMobilePosition(deviceID string, body []byte) {
 			"经度:", pos.Longitude,
 			"纬度:", pos.Latitude,
 			"时间:", pos.Time)
-		// TODO: 更新 devices 表的位置信息
-		// db.DBClient.Model(&Devices{}).Where("deviceid = ?", locationID).Updates(map[string]interface{}{
-		//     "longitude": pos.Longitude,
-		//     "latitude":  pos.Latitude,
-		//     "gps_time":  pos.Time,
-		// })
+		if err := db.DBClient.Model(&Devices{}).Where("deviceid = ?", locationID).Updates(map[string]interface{}{
+			"longitude": pos.Longitude,
+			"latitude":  pos.Latitude,
+			"gps_time":   gpsTime,
+		}).Error; err != nil {
+			logrus.Errorln("更新设备位置信息失败:", locationID, err)
+		}
 		return
 	}
 

@@ -250,9 +250,9 @@ func GetActiveDevice(deviceID string) (Devices, bool) {
 
 // UpdateActiveDevice 更新活跃设备的设备信息（用于同步数据库变更到缓存）
 func UpdateActiveDevice(deviceID string, device *Devices) {
-	if _, ok := _activeDevices.Get(deviceID); ok {
-		device.addr = nil
-		device.source = nil
+	if old, ok := _activeDevices.Get(deviceID); ok {
+		device.addr = old.addr
+		device.source = old.source
 		_activeDevices.Store(deviceID, *device)
 		logActiveDeviceStore("update_active", device)
 	}
@@ -546,6 +546,10 @@ func SipSubscribe(device Devices, subscribeType string) {
 	}).SetContentType(&sip.ContentTypeXML).SetMethod(sip.SUBSCRIBE).SetContact(_serverDevices.addr)
 
 	req := sip.NewRequest("", sip.SUBSCRIBE, activeDevice.addr.URI, sip.DefaultSipVersion, hb.Build(), []byte(xmlBody))
+	if activeDevice.source == nil {
+		logrus.Warningln("设备连接信息缺失，跳过订阅:", device.DeviceID)
+		return
+	}
 	req.SetDestination(activeDevice.source)
 	req.SetRecipient(activeDevice.addr.URI)
 	req.AppendHeader(&sip.GenericHeader{HeaderName: "Event", Contents: "presence"})
