@@ -1,6 +1,7 @@
 package sipapi
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -114,6 +115,13 @@ func handlerRegister(req *sip.Request, tx *sip.Transaction) {
 				user.Online = true
 				_activeDevices.Store(user.DeviceID, user)
 				logActiveDeviceStore("handler_register", &user)
+				// 记录设备上线事件
+				db.DBClient.Create(&db.DeviceEvent{
+					DeviceID:  user.DeviceID,
+					EventType: "ONLINE",
+					EventTime: time.Now().Unix(),
+					Source:   user.Source,
+				})
 				// 确保 Online 状态同步到数据库
 				db.DBClient.Model(&Devices{}).Where("deviceid = ?", user.DeviceID).Update("online", true)
 				if !user.Regist {
@@ -233,6 +241,16 @@ func parseMobilePosition(deviceID string, body []byte) {
 		logrus.Warnln("解析GPS时间失败:", pos.Time, err)
 	}
 
+	// 缓存位置到 Redis（实时写入）
+	db.SetDevicePosition(locationID, &db.CachedPosition{
+		Longitude: pos.Longitude,
+		Latitude:  pos.Latitude,
+		GPSTime:   pos.Time,
+		Speed:    pos.Speed,
+		Direction: pos.Direction,
+		Altitude: pos.Altitude,
+	})
+
 	// 1. 尝试在通道表中查找
 	channel := Channels{ChannelID: locationID}
 	if err := db.Get(db.DBClient, &channel); err == nil {
@@ -334,4 +352,63 @@ func handlerOptions(req *sip.Request, tx *sip.Transaction) {
 	tx.Respond(resp)
 
 	logrus.Debugf("OPTIONS处理完成: DeviceID=%s", fromUser.DeviceID)
+}
+
+// StartPositionSyncWorker 定时同步GPS缓存到数据库
+func StartPositionSyncWorker(ctx context.Context) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	logrus.Infoln("GPS位置同步worker已启动(30s间隔)")
+
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Infoln("GPS位置同步worker已停止")
+			return
+		case <-ticker.C:
+			syncGPSPositionsToDB()
+		}
+	}
+}
+
+// syncGPSPositionsToDB 同步GPS缓存到数据库
+func syncGPSPositionsToDB() {
+	keys, err := db.GetAllGPSKeys()
+	if err != nil {
+		logrus.Warnln("获取GPS缓存key失败:", err)
+		return
+	}
+	if len(keys) == 0 {
+		return
+	}
+
+	var positions []db.DevicePosition
+	now := time.Now().Unix()
+
+	for _, key := range keys {
+		deviceID := key[13:]
+		pos, err := db.GetDevicePosition(deviceID)
+		if err != nil || pos == nil {
+			continue
+		}
+		gpsTime, _ := time.ParseInLocation(gbTimeLayout, pos.GPSTime, time.Local)
+		positions = append(positions, db.DevicePosition{
+			DeviceID:   deviceID,
+			Longitude: pos.Longitude,
+			Latitude:  pos.Latitude,
+			GPSTime:   gpsTime.Unix(),
+			Speed:    pos.Speed,
+			Direction: pos.Direction,
+			Altitude:  pos.Altitude,
+			CreatedAt: now,
+		})
+	}
+
+	if len(positions) > 0 {
+		if err := db.CreateBatch(db.DBClient, positions); err != nil {
+			logrus.Warnln("批量写入GPS历史失败:", err)
+		} else {
+			logrus.Debugf("同步GPS历史记录 %d 条", len(positions))
+		}
+	}
 }

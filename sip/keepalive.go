@@ -128,6 +128,11 @@ func StartDeviceOfflineWatcher(ctx context.Context) {
 					if err != nil {
 						logrus.Errorln("Update device offline error:", deviceID, err)
 					} else {
+						db.DBClient.Create(&db.DeviceEvent{
+							DeviceID:  deviceID,
+							EventType: "OFFLINE",
+							EventTime: time.Now().Unix(),
+						})
 						_activeDevices.Delete(deviceID)
 						logActiveDeviceDelete("offline_watcher", deviceID)
 						go notify(notifyDevicesActive(deviceID, "OFFLINE"))

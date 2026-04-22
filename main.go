@@ -59,6 +59,7 @@ func main() {
 	// 启动设备离线检测监听
 	if db.RedisClient != nil {
 		sipapi.StartDeviceOfflineWatcher(ctx)
+		sipapi.StartPositionSyncWorker(ctx)
 	}
 
 	// 设置 JWT 密钥（使用配置中的 secret）
@@ -71,6 +72,9 @@ func main() {
 		new(model.UserRole),
 		new(model.RolePermission),
 		new(model.User),
+		new(model.DeviceEvent),
+		new(model.DevicePosition),
+		new(model.DeviceAlarm),
 	)
 	permissionService := &service.PermissionService{}
 	if err := permissionService.Init(); err != nil {

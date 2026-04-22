@@ -170,3 +170,60 @@ type DeviceUpdateRequest struct {
 	// @Description 设备接收媒体流 IP
 	StreamIP string `json:"streamip"`
 }
+
+// ==================== 设备事件日志 ====================
+
+// DeviceEvent 设备上下线事件
+type DeviceEvent struct {
+	db.DBModel
+	// DeviceID 设备ID
+	DeviceID string `json:"deviceid" gorm:"column:deviceid;type:varchar(64);not null;index"`
+	// EventType 事件类型
+	EventType string `json:"eventtype" gorm:"column:eventtype;type:enum('ONLINE','OFFLINE');not null"`
+	// EventTime 事件时间
+	EventTime int64 `json:"eventtime" gorm:"column:eventtime;type:bigint;not null"`
+	// Source 来源
+	Source string `json:"source" gorm:"column:source;type:varchar(64)"`
+	// Remark 备注
+	Remark string `json:"remark" gorm:"column:remark;type:varchar(255)"`
+}
+
+// ==================== 设备位置历史 ====================
+
+// DevicePosition 设备位置历史
+type DevicePosition struct {
+	db.DBModel
+	// DeviceID 设备ID
+	DeviceID string `json:"deviceid" gorm:"column:deviceid;type:varchar(64);not null;index"`
+	// Longitude 经度
+	Longitude float64 `json:"longitude" gorm:"column:longitude;type:decimal(10,6)"`
+	// Latitude 纬度
+	Latitude float64 `json:"latitude" gorm:"column:latitude;type:decimal(10,6)"`
+	// GPSTime GPS时间
+	GPSTime int64 `json:"gpstime" gorm:"column:gpstime;type:bigint;not null"`
+	// Speed 速度
+	Speed float64 `json:"speed" gorm:"column:speed;type:float"`
+	// Direction 方向
+	Direction float64 `json:"direction" gorm:"column:direction;type:float"`
+	// Altitude 海拔
+	Altitude float64 `json:"altitude" gorm:"column:altitude;type:float"`
+}
+
+// ==================== 设备告警 ====================
+
+// DeviceAlarm 设备告警
+type DeviceAlarm struct {
+	db.DBModel
+	// DeviceID 设备ID
+	DeviceID string `json:"deviceid" gorm:"column:deviceid;type:varchar(64);not null;index"`
+	// AlarmType 告警类型
+	AlarmType string `json:"alarmtype" gorm:"column:alarmtype;type:varchar(64);not null"`
+	// AlarmLevel 告警级别
+	AlarmLevel string `json:"alarmlevel" gorm:"column:alarmlevel;type:enum('NORMAL','WARNING','CRITICAL');default:'WARNING'"`
+	// AlarmMsg 告警消息
+	AlarmMsg string `json:"alarmmsg" gorm:"column:alarmmsg;type:varchar(512)"`
+	// AlarmTime 告警时间
+	AlarmTime int64 `json:"alarmtime" gorm:"column:alarmtime;type:bigint;not null"`
+	// Handled 是否已处理
+	Handled int `json:"handled" gorm:"column:handled;type:tinyint;default:0"`
+}

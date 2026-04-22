@@ -33,6 +33,51 @@ func (j *M) Scan(value interface{}) error {
 	return utils.JSONDecode(bytes, j)
 }
 
+// ==================== 设备位置历史 ====================
+
+type DevicePosition struct {
+	ID        uint    `json:"id" gorm:"primary_key"`
+	DeviceID string  `json:"deviceid" gorm:"column:deviceid;type:varchar(64);not null;index"`
+	Longitude float64 `json:"longitude" gorm:"column:longitude;type:decimal(10,6)"`
+	Latitude float64 `json:"latitude" gorm:"column:latitude;type:decimal(10,6)"`
+	GPSTime  int64   `json:"gpstime" gorm:"column:gpstime;type:bigint;not null"`
+	Speed   float64 `json:"speed" gorm:"column:speed;type:float"`
+	Direction float64`json:"direction" gorm:"column:direction;type:float"`
+	Altitude float64`json:"altitude" gorm:"column:altitude;type:float"`
+	CreatedAt int64  `json:"addtime" gorm:"column:addtime"`
+}
+
+func (DevicePosition) TableName() string { return "device_positions" }
+
+// ==================== 设备事件 ====================
+
+type DeviceEvent struct {
+	ID        uint   `json:"id" gorm:"primary_key"`
+	DeviceID string `json:"deviceid" gorm:"column:deviceid;type:varchar(64);not null;index"`
+	EventType string `json:"eventtype" gorm:"column:eventtype;type:enum('ONLINE','OFFLINE');not null"`
+	EventTime int64  `json:"eventtime" gorm:"column:eventtime;type:bigint;not null"`
+	Source   string `json:"source" gorm:"column:source;type:varchar(64)"`
+	Remark   string `json:"remark" gorm:"column:remark;type:varchar(255)"`
+	CreatedAt int64  `json:"addtime" gorm:"column:addtime"`
+}
+
+func (DeviceEvent) TableName() string { return "device_events" }
+
+// ==================== 设备告警 ====================
+
+type DeviceAlarm struct {
+	ID        uint   `json:"id" gorm:"primary_key"`
+	DeviceID string `json:"deviceid" gorm:"column:deviceid;type:varchar(64);not null;index"`
+	AlarmType string `json:"alarmtype" gorm:"column:alarmtype;type:varchar(64);not null"`
+	AlarmLevel string `json:"alarmlevel" gorm:"column:alarmlevel;type:enum('NORMAL','WARNING','CRITICAL');default:'WARNING'"`
+	AlarmMsg string `json:"alarmmsg" gorm:"column:alarmmsg;type:varchar(512)"`
+	AlarmTime int64  `json:"alarmtime" gorm:"column:alarmtime;type:bigint;not null"`
+	Handled int    `json:"handled" gorm:"column:handled;type:tinyint;default:0"`
+	CreatedAt int64  `json:"addtime" gorm:"column:addtime"`
+}
+
+func (DeviceAlarm) TableName() string { return "device_alarms" }
+
 type StringArray []string
 
 func (j StringArray) Value() (driver.Value, error) {

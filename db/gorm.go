@@ -50,6 +50,11 @@ func Create(db *gorm.DB, obj any) error {
 	return db.Create(obj).Error
 }
 
+// CreateBatch 批量创建
+func CreateBatch(db *gorm.DB, objs any) error {
+	return db.Create(objs).Error
+}
+
 func Save(db *gorm.DB, obj any) error {
 	return db.Save(obj).Error
 }

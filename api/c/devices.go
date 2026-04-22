@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/panjjo/gorm"
@@ -492,3 +493,83 @@ func DevicesPTZControl(c *gin.Context) {
 // 		logrus.Errorln("send response api fail.", err)
 // 	}
 // }
+
+// DeviceEventsList 获取设备上下线事件
+// @Param       id path string true "设备id"
+// @Param       timeStart query int false "开始时间戳"
+// @Param       timeEnd query int false "结束时间戳"
+// @Success    0 {object} []db.DeviceEvent
+// @Router    /api/v1/devices/{id}/events [get]
+func DeviceEventsList(c *gin.Context) {
+	deviceID := c.Param("id")
+	timeStart := c.DefaultQuery("timeStart", "0")
+	timeEnd := c.DefaultQuery("timeEnd", "0")
+	
+	events := []db.DeviceEvent{}
+	query := db.DBClient.Model(&db.DeviceEvent{}).Where("device_id = ?", deviceID)
+	
+	if timeStart != "0" {
+		query = query.Where("event_time >= ?", timeStart)
+	}
+	if timeEnd != "0" {
+		query = query.Where("event_time <= ?", timeEnd)
+	}
+	
+	if err := query.Order("event_time DESC").Limit(100).Find(&events).Error; err != nil {
+		m.JsonResponse(c, m.StatusDBERR, err)
+		return
+	}
+	c.JSON(200, events)
+}
+
+// DevicePositionsList 获取设备GPS轨迹
+// @Param       id path string true "设备id"
+// @Param       timeStart query int false "开始时间戳(默认15分钟前)"
+// @Success    0 {object} []db.DevicePosition
+// @Router    /api/v1/devices/{id}/positions [get]
+func DevicePositionsList(c *gin.Context) {
+	deviceID := c.Param("id")
+	timeStart := c.DefaultQuery("timeStart", "0")
+	
+	if timeStart == "0" {
+		timeStart = fmt.Sprintf("%d", time.Now().Unix()-900)
+	}
+	
+	positions := []db.DevicePosition{}
+	if err := db.DBClient.Model(&db.DevicePosition{}).
+		Where("device_id = ? AND gpstime >= ?", deviceID, timeStart).
+		Order("gpstime ASC").
+		Find(&positions).Error; err != nil {
+		m.JsonResponse(c, m.StatusDBERR, err)
+		return
+	}
+	c.JSON(200, positions)
+}
+
+// DeviceAlarmsList 获取设备告警记录
+// @Param       id path string true "设备id"
+// @Param       type query string false "告警类型"
+// @Param       handled query int false "已处理(0未处理,1已处理)"
+// @Success    0 {object} []db.DeviceAlarm
+// @Router    /api/v1/devices/{id}/alarms [get]
+func DeviceAlarmsList(c *gin.Context) {
+	deviceID := c.Param("id")
+	alarmType := c.Query("type")
+	handled := c.Query("handled")
+	
+	alarms := []db.DeviceAlarm{}
+	query := db.DBClient.Model(&db.DeviceAlarm{}).Where("device_id = ?", deviceID)
+	
+	if alarmType != "" {
+		query = query.Where("alarm_type = ?", alarmType)
+	}
+	if handled != "" {
+		query = query.Where("handled = ?", handled)
+	}
+	
+	if err := query.Order("alarm_time DESC").Limit(100).Find(&alarms).Error; err != nil {
+		m.JsonResponse(c, m.StatusDBERR, err)
+		return
+	}
+	c.JSON(200, alarms)
+}

@@ -101,3 +101,89 @@ func GetDevicesOnlineStatus(deviceIDs []string) map[string]bool {
 
 	return result
 }
+
+// ==================== 设备位置缓存 ====================
+
+const (
+	GPSKeyPrefix = "gps:position:"
+	GPSExpire    = 60 * time.Second
+)
+
+// CachedPosition 缓存的位置信息
+type CachedPosition struct {
+	Longitude float64
+	Latitude  float64
+	GPSTime   string
+	Speed    float64
+	Direction float64
+	Altitude float64
+}
+
+// SetDevicePosition 缓存设备位置
+func SetDevicePosition(deviceID string, pos *CachedPosition) error {
+	if RedisClient == nil {
+		return fmt.Errorf("redis client not initialized")
+	}
+	key := GPSKeyPrefix + deviceID
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return RedisClient.HSet(ctx, key, map[string]interface{}{
+		"longitude": pos.Longitude,
+		"latitude":  pos.Latitude,
+		"gps_time":   pos.GPSTime,
+		"speed":     pos.Speed,
+		"direction": pos.Direction,
+		"altitude":  pos.Altitude,
+	}).Err()
+}
+
+// GetDevicePosition 获取缓存的设备位置
+func GetDevicePosition(deviceID string) (*CachedPosition, error) {
+	if RedisClient == nil {
+		return nil, fmt.Errorf("redis client not initialized")
+	}
+	key := GPSKeyPrefix + deviceID
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	data, err := RedisClient.HGetAll(ctx, key).Result()
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, nil // 没有缓存
+	}
+	pos := &CachedPosition{}
+	fmt.Sscanf(data["longitude"], "%f", &pos.Longitude)
+	fmt.Sscanf(data["latitude"], "%f", &pos.Latitude)
+	pos.GPSTime = data["gps_time"]
+	fmt.Sscanf(data["speed"], "%f", &pos.Speed)
+	fmt.Sscanf(data["direction"], "%f", &pos.Direction)
+	fmt.Sscanf(data["altitude"], "%f", &pos.Altitude)
+	return pos, nil
+}
+
+// GetAllGPSKeys 获取所有GPS缓存key
+func GetAllGPSKeys() ([]string, error) {
+	if RedisClient == nil {
+		return nil, fmt.Errorf("redis client not initialized")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	iter := RedisClient.Scan(ctx, 0, GPSKeyPrefix+"*", 100).Iterator()
+	var keys []string
+	for iter.Next(ctx) {
+		keys = append(keys, iter.Val())
+	}
+	return keys, iter.Err()
+}
+
+// DeleteDevicePosition 删除设备位置缓存
+func DeleteDevicePosition(deviceID string) error {
+	if RedisClient == nil {
+		return fmt.Errorf("redis client not initialized")
+	}
+	key := GPSKeyPrefix + deviceID
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return RedisClient.Del(ctx, key).Err()
+}
