@@ -251,6 +251,9 @@ func parseMobilePosition(deviceID string, body []byte) {
 		Altitude: pos.Altitude,
 	})
 
+	// 写入位置历史表（device_positions）
+	var devicePositionID string
+
 	// 1. 尝试在通道表中查找
 	channel := Channels{ChannelID: locationID}
 	if err := db.Get(db.DBClient, &channel); err == nil {
@@ -265,27 +268,47 @@ func parseMobilePosition(deviceID string, body []byte) {
 		}).Error; err != nil {
 			logrus.Errorln("更新通道位置信息失败:", locationID, err)
 		}
-		return
-	}
-
-	// 2. 尝试在设备表中查找
-	device := Devices{DeviceID: locationID}
-	if err := db.Get(db.DBClient, &device); err == nil {
-		logrus.Infoln("收到【设备】位置上报:", locationID,
-			"经度:", pos.Longitude,
-			"纬度:", pos.Latitude,
-			"时间:", pos.Time)
-		if err := db.DBClient.Model(&Devices{}).Where("deviceid = ?", locationID).Updates(map[string]interface{}{
-			"longitude": pos.Longitude,
-			"latitude":  pos.Latitude,
-			"gps_time":   gpsTime,
-		}).Error; err != nil {
-			logrus.Errorln("更新设备位置信息失败:", locationID, err)
+		devicePositionID = locationID
+	} else {
+		// 2. 尝试在设备表中查找
+		device := Devices{DeviceID: locationID}
+		if err := db.Get(db.DBClient, &device); err == nil {
+			logrus.Infoln("收到【设备】位置上报:", locationID,
+				"经度:", pos.Longitude,
+				"纬度:", pos.Latitude,
+				"时间:", pos.Time)
+			if err := db.DBClient.Model(&Devices{}).Where("deviceid = ?", locationID).Updates(map[string]interface{}{
+				"longitude": pos.Longitude,
+				"latitude":  pos.Latitude,
+				"gps_time":   gpsTime,
+			}).Error; err != nil {
+				logrus.Errorln("更新设备位置信息失败:", locationID, err)
+			}
+			devicePositionID = locationID
+		} else {
+			logrus.Warnln("收到位置上报，但未找到对应主体:", locationID)
+			return
 		}
-		return
 	}
 
-	logrus.Warnln("收到位置上报，但未找到对应主体:", locationID)
+	// 写入位置历史表
+	if devicePositionID != "" && gpsTime.Unix() > 0 {
+		devicePos := db.DevicePosition{
+			DeviceID:  devicePositionID,
+			Longitude: pos.Longitude,
+			Latitude:  pos.Latitude,
+			GPSTime:   gpsTime.Unix(),
+			Speed:     pos.Speed,
+			Direction: pos.Direction,
+			Altitude:  pos.Altitude,
+			CreatedAt: time.Now().Unix(),
+		}
+		if err := db.Create(db.DBClient, &devicePos); err != nil {
+			logrus.Errorln("写入位置历史失败:", devicePositionID, err)
+		} else {
+			logrus.Debugln("写入位置历史成功:", devicePositionID, gpsTime.Unix())
+		}
+	}
 }
 
 // handlerBye 处理BYE请求
