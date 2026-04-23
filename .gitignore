@@ -3,6 +3,7 @@ srv*
 srv
 .idea
 ysip*
+gosip*
 node_modules
 *.log
 .opencode/

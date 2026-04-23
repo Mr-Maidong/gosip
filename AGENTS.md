@@ -24,12 +24,6 @@ GoSIP（现名 YSIP）是一个 GB28181 SIP 服务器，用于视频监控系统
 ### Go 后端
 
 ```bash
-# 构建（Linux）
-GOOS=linux go build -v -o ysip
-
-# 当前平台构建
-go build -v -o ysip
-
 # 运行
 go run main.go
 
@@ -41,17 +35,13 @@ go vet ./...
 go test ./...
 go test -v -run "TestPattern" ./...
 go test -v ./api/...
-
-# Docker
-make docker
-make all
 ```
 
 ### Web 前端（位于 web/ 目录）
 
 ```bash
 yarn install
-yarn dev        # http://localhost:3000
+yarn dev        # http://localhost:5173
 yarn build
 yarn lint
 yarn format
