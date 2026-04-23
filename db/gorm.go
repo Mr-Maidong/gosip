@@ -50,9 +50,22 @@ func Create(db *gorm.DB, obj any) error {
 	return db.Create(obj).Error
 }
 
-// CreateBatch 批量创建
+// CreateBatch 批量创建，逐条插入以避免旧版 gorm 批量创建时的 reflect 零值 panic
 func CreateBatch(db *gorm.DB, objs any) error {
-	return db.Create(objs).Error
+	val := reflect.ValueOf(objs)
+	if val.Kind() != reflect.Slice {
+		return db.Create(objs).Error
+	}
+	for i := 0; i < val.Len(); i++ {
+		item := val.Index(i)
+		if !item.IsValid() || item.IsZero() {
+			continue
+		}
+		if err := db.Create(item.Addr().Interface()).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func Save(db *gorm.DB, obj any) error {

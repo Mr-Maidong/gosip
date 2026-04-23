@@ -51,42 +51,6 @@ func main() {
 		http.ListenAndServe("0.0.0.0:6060", nil)
 	}()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	sipapi.Start()
-
-	// 启动设备离线检测监听
-	if db.RedisClient != nil {
-		sipapi.StartDeviceOfflineWatcher(ctx)
-		sipapi.StartPositionSyncWorker(ctx)
-	}
-
-	// 设置 JWT 密钥（使用配置中的 secret）
-	utils.SetJWTSecret(m.MConfig.Secret)
-
-	// 初始化权限系统（数据库表迁移和默认数据）
-	db.DBClient.AutoMigrate(
-		new(model.Role),
-		new(model.Permission),
-		new(model.UserRole),
-		new(model.RolePermission),
-		new(model.User),
-		new(model.DeviceEvent),
-		new(model.DevicePosition),
-		new(model.DeviceAlarm),
-	)
-	permissionService := &service.PermissionService{}
-	if err := permissionService.Init(); err != nil {
-		logrus.Errorln("Init permission system error:", err)
-	}
-
-	// 创建默认管理员用户（如果不存在）
-	createDefaultAdminUser()
-
-	// 为没有头像的用户生成头像
-	generateAvatarForUsersWithoutAvatar()
-
 	// 根据配置设置 Gin 运行模式
 	if strings.ToUpper(m.MConfig.MOD) == "RELEASE" {
 		gin.SetMode(gin.ReleaseMode)
@@ -97,9 +61,57 @@ func main() {
 	r.Use(middleware.Recovery)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
+	// 设置 JWT 密钥
+	utils.SetJWTSecret(m.MConfig.Secret)
+
+	// 初始化权限系统（数据库表迁移和默认数据）
+	db.DBClient.AutoMigrate(
+		new(model.Role),
+		new(model.Permission),
+		new(model.UserRole),
+		new(model.RolePermission),
+		new(model.User),
+		new(db.DeviceEvent),
+		new(db.DevicePosition),
+		new(db.DeviceAlarm),
+	)
+	permissionService := &service.PermissionService{}
+	if err := permissionService.Init(); err != nil {
+		logrus.Errorln("Init permission system error:", err)
+	}
+
+	// 创建默认管理员用户
+	createDefaultAdminUser()
+
+	// 为没有头像的用户生成头像
+	generateAvatarForUsersWithoutAvatar()
+
+	// 初始化 API
 	api.Init(r)
 
-	logrus.Fatal(r.Run(m.MConfig.API))
+	// 上下文和取消函数
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// 启动 SIP 服务器（异步）
+	go func() {
+		sipapi.Start()
+		if db.RedisClient != nil {
+			sipapi.StartDeviceOfflineWatcher(ctx)
+			sipapi.StartPositionSyncWorker(ctx)
+		}
+	}()
+
+	// 启动 API 服务器（异步）
+	go func() {
+		logrus.Infof("Starting API server on %s", m.MConfig.API)
+		if err := r.Run(m.MConfig.API); err != nil {
+			logrus.Errorf("API server error: %v", err)
+		}
+	}()
+
+	// 主线程阻塞
+	select {}
 }
 
 // createDefaultAdminUser 创建默认管理员用户
