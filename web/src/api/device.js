@@ -52,3 +52,36 @@ export function syncChannels(id) {
     method: 'post'
   })
 }
+
+/**
+ * 获取设备上下线事件
+ */
+export function getDeviceEvents(id, params) {
+  return request({
+    url: `/v1/devices/${id}/events`,
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取设备GPS轨迹
+ */
+export function getDevicePositions(id, params) {
+  return request({
+    url: `/v1/devices/${id}/positions`,
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取设备告警记录
+ */
+export function getDeviceAlarms(id, params) {
+  return request({
+    url: `/v1/devices/${id}/alarms`,
+    method: 'get',
+    params
+  })
+}

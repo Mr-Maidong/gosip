@@ -93,6 +93,8 @@
           <a-badge
             :status="getDeviceStatus(record).badge"
             :text="getDeviceStatus(record).text"
+            class="status-badge"
+            @click="openDetailModal(record)"
           />
         </template>
         <template v-else-if="column.key === 'info'">
@@ -251,6 +253,12 @@
       @success="handleAddSuccess"
     />
 
+    <!-- 设备详情弹窗 -->
+    <DeviceDetailModal
+      v-model:open="detailModalVisible"
+      :device="detailDevice"
+    />
+
     <!-- 直播弹窗 -->
     <a-modal
       v-model:open="liveModalVisible"
@@ -285,6 +293,7 @@ import { message } from 'ant-design-vue'
 import { DownOutlined, ReloadOutlined, CheckOutlined, BorderOutlined, PlusOutlined, DeleteOutlined, PlaySquareOutlined, ArrowLeftOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
 import { LivePlayer } from '@/components'
 import DeviceForm from './DeviceForm.vue'
+import DeviceDetailModal from './DeviceDetailModal.vue'
 import request from '@/api/request'
 
 const mode = ref('devices')
@@ -298,6 +307,8 @@ const currentDevice = ref(null)
 
 const editModalVisible = ref(false)
 const addModalVisible = ref(false)
+const detailModalVisible = ref(false)
+const detailDevice = ref(null)
 const liveModalVisible = ref(false)
 const liveUrl = ref('')
 const currentChannel = ref(null)
@@ -548,6 +559,11 @@ const openAddModal = () => {
   addModalVisible.value = true
 }
 
+const openDetailModal = record => {
+  detailDevice.value = record
+  detailModalVisible.value = true
+}
+
 const handleAddSuccess = async formData => {
   try {
     const data = { name: formData.name, pwd: formData.pwd }
@@ -764,6 +780,13 @@ onMounted(() => {
   .time-cell {
     font-size: 12px;
     color: #8c8c8c;
+  }
+}
+
+.status-badge {
+  cursor: pointer;
+  &:hover {
+    background-color: #f5f5f5;
   }
 }
 
