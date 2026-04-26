@@ -61,7 +61,8 @@ func SipTalk(data *Streams) (*Streams, error) {
 			Vhost:  "__defaultVhost__", // 默认虚拟主机
 			App:    "rtp",              // App 名称
 			Stream: data.StreamID,      // 格式: talk_channelId
-			Ssrc:   "0",                // ssrc
+			Ssrc:   data.ssrc,          // ssrc
+
 		}
 
 		rtpResp, err := zlmStartSendRtpPassive(rtpReq)
@@ -80,7 +81,7 @@ func SipTalk(data *Streams) (*Streams, error) {
 		db.Create(db.DBClient, data)
 		ssrcLock.Unlock()
 
-		data, err = sipTalkPush(data, channel, user)
+		data, err = sipTalkPush(data, channel, user, rtpResp.Port)
 		if err != nil {
 			return nil, fmt.Errorf("获取视频失败:%v", err)
 		}
@@ -100,14 +101,14 @@ func SipTalk(data *Streams) (*Streams, error) {
 	return data, nil
 }
 
-func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, error) {
+func sipTalkPush(data *Streams, channel Channels, device Devices, rtpPort int) (*Streams, error) {
 	var (
 		s sdp.Session
 		b []byte
 	)
 	name := "Talk"
 	// 根据设备传输协议设置 SDP 协议
-	protocol := "RTP/AVP"
+	protocol := "TCP/RTP/AVP"
 	if strings.ToLower(device.TransPort) == "tcp" {
 		protocol = "TCP/RTP/AVP"
 	}
@@ -116,15 +117,15 @@ func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, err
 	audio := sdp.Media{
 		Description: sdp.MediaDescription{
 			Type:    "audio",
-			Port:    _sysinfo.MediaServerRtpPort,
-			Formats: []string{"8"},
+			Port:    rtpPort,
+			Formats: []string{"8 104"},
 			// Formats:  []string{"8 104"},
 			Protocol: protocol,
 		},
 	}
 	audio.AddAttribute("sendonly")
 	audio.AddAttribute("rtpmap", "8", "PCMA/8000")
-	// audio.AddAttribute("rtpmap", "104", "mpeg4-generic/32000")
+	audio.AddAttribute("rtpmap", "104", "mpeg4-generic/32000")
 
 	// 确定收流地址：优先使用设备指定的 StreamIP，否则使用媒体服务器默认 IP
 	streamIP := _sysinfo.MediaServerRtpIP
@@ -138,7 +139,7 @@ func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, err
 	msg := &sdp.Message{
 		Origin: sdp.Origin{
 			Username: _serverDevices.DeviceID, // 媒体服务器id
-			Address:  streamIP.String(),
+			Address:  _sysinfo.MediaServerRtpIP.String(),
 		},
 		Name: name,
 		Connection: sdp.ConnectionData{
@@ -175,7 +176,7 @@ func sipTalkPush(data *Streams, channel Channels, device Devices) (*Streams, err
 	}).SetContentType(&sip.ContentTypeSDP).SetMethod(sip.INVITE).SetContact(_serverDevices.addr)
 	req := sip.NewRequest("", sip.INVITE, channel.addr.URI, sip.DefaultSipVersion, hb.Build(), b)
 	req.SetDestination(device.source)
-	req.AppendHeader(&sip.GenericHeader{HeaderName: "Subject", Contents: fmt.Sprintf("%s:%s,%s:%s", channel.ChannelID, data.StreamID, _serverDevices.DeviceID, data.StreamID)})
+	req.AppendHeader(&sip.GenericHeader{HeaderName: "Subject", Contents: fmt.Sprintf("%s:%s", channel.ChannelID, "33010000002000000001")})
 	req.SetRecipient(channel.addr.URI)
 	// 根据设备的传输方式发送请求
 	var tx *sip.Transaction

@@ -227,6 +227,8 @@ func zlmStartSendRtpPassive(req zlmStartSendRtpPassivReq) (zlmStartSendRtpPassiv
 	params.Set("app", req.App)
 	params.Set("stream", req.Stream)
 	params.Set("ssrc", req.Ssrc)
+	params.Set("is_udp", "0")
+	params.Set("close_delay_ms", "15000")
 
 	body, err := utils.GetRequest(config.Media.RESTFUL + "/index/api/startSendRtpPassive?" + params.Encode())
 	if err != nil {

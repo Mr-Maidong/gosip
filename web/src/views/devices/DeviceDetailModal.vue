@@ -24,7 +24,7 @@
               <div v-if="pos.speed" class="event-source">速度: {{ pos.speed }}</div>
             </a-timeline-item>
           </a-timeline>
-          <a-empty v-else description="暂无轨迹" />
+          <a-empty v-else description="近15分钟无上报轨迹" />
         </a-spin>
       </a-tab-pane>
 
